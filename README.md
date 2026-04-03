@@ -13,12 +13,26 @@ Real-time airplane flight tracker for macOS and iOS.
 
 ### 1. OpenSky Account (optional)
 
-For higher rate limits, create a free account at [opensky-network.org](https://opensky-network.org/) and set environment variables:
+For higher rate limits, create a free account at [opensky-network.org](https://opensky-network.org/) and create an API client:
+
+1. Log in to your OpenSky account
+2. Go to Account page
+3. Create a new API client to get `client_id` and `client_secret`
+
+Set environment variables:
 
 ```bash
-export OPENSKY_USERNAME="your_username"
-export OPENSKY_PASSWORD="your_password"
+export OPENSKY_CLIENT_ID="your_client_id"
+export OPENSKY_CLIENT_SECRET="your_client_secret"
 ```
+
+**Or add to Xcode scheme:**
+1. Open project in Xcode
+2. Product → Scheme → Edit Scheme
+3. Select Run → Arguments tab
+4. Add Environment Variables:
+   - `OPENSKY_CLIENT_ID` = your_client_id
+   - `OPENSKY_CLIENT_SECRET` = your_client_secret
 
 ### 2. Build
 
@@ -27,10 +41,10 @@ export OPENSKY_PASSWORD="your_password"
 xcodegen generate
 
 # macOS
-xcodebuild -project FlightTracker.xcodeproj -target UpThereMac -configuration Debug build
+xcodebuild -project UpThere.xcodeproj -target UpThereMac -configuration Debug build
 
 # iOS (requires simulator)
-xcodebuild -project FlightTracker.xcodeproj -target UpThere -sdk iphonesimulator -configuration Debug build
+xcodebuild -project UpThere.xcodeproj -target UpThere -sdk iphonesimulator -configuration Debug build
 ```
 
 ### 3. Run
