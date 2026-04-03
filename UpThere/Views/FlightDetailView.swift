@@ -8,9 +8,9 @@ struct FlightDetailView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                // Header with flight icon
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header
                     HStack {
                         Spacer()
                         VStack(spacing: 12) {
@@ -25,67 +25,84 @@ struct FlightDetailView: View {
                         }
                         Spacer()
                     }
-                    .padding(.vertical, 20)
-                    .listRowBackground(Color.orange.opacity(0.1))
-                }
-                
-                // Callsign section
-                Section("Flight Information") {
-                    LabeledContent("Callsign", value: flight.formattedCallsign)
-                    LabeledContent("Aircraft ID", value: flight.id.uppercased())
-                    LabeledContent("Country", value: flight.originCountry)
-                }
-                
-                // Position section
-                Section("Position") {
-                    if let altitude = flight.altitudeFeet {
-                        LabeledContent("Altitude", value: "\(Int(altitude).formatted()) ft")
-                    } else {
-                        LabeledContent("Status", value: flight.onGround ? "On Ground" : "Unknown")
-                    }
+                    .padding()
+                    .background(Color.orange.opacity(0.1))
                     
-                    if let speed = flight.speedKnots {
-                        LabeledContent("Speed", value: "\(Int(speed)) knots")
+                    // Info
+                    Group {
+                        Text("Flight Information").font(.headline)
+                        HStack {
+                            Text("Callsign:")
+                            Spacer()
+                            Text(flight.formattedCallsign).fontWeight(.medium)
+                        }
+                        HStack {
+                            Text("Aircraft ID:")
+                            Spacer()
+                            Text(flight.id).fontWeight(.medium)
+                        }
+                        HStack {
+                            Text("Country:")
+                            Spacer()
+                            Text(flight.originCountry).fontWeight(.medium)
+                        }
                     }
+                    .padding(.horizontal)
                     
-                    if let track = flight.trueTrack {
-                        LabeledContent("Heading", value: "\(Int(track))°")
-                    }
+                    Divider()
                     
-                    if let verticalRate = flight.verticalRateFPM {
-                        LabeledContent("Vertical Speed", value: "\(Int(verticalRate)) fpm")
+                    // Position
+                    Group {
+                        Text("Position").font(.headline)
+                        if let altitude = flight.altitudeFeet {
+                            HStack {
+                                Text("Altitude:")
+                                Spacer()
+                                Text("\(Int(altitude).formatted()) ft").fontWeight(.medium)
+                            }
+                        }
+                        if let speed = flight.speedKnots {
+                            HStack {
+                                Text("Speed:")
+                                Spacer()
+                                Text("\(Int(speed)) knots").fontWeight(.medium)
+                            }
+                        }
+                        if let track = flight.trueTrack {
+                            HStack {
+                                Text("Heading:")
+                                Spacer()
+                                Text("\(Int(track))°").fontWeight(.medium)
+                            }
+                        }
                     }
+                    .padding(.horizontal)
+                    
+                    Divider()
+                    
+                    // Coordinates
+                    Group {
+                        Text("Coordinates").font(.headline)
+                        if let lat = flight.latitude {
+                            HStack {
+                                Text("Latitude:")
+                                Spacer()
+                                Text(String(format: "%.6f°", lat)).fontWeight(.medium)
+                            }
+                        }
+                        if let lon = flight.longitude {
+                            HStack {
+                                Text("Longitude:")
+                                Spacer()
+                                Text(String(format: "%.6f°", lon)).fontWeight(.medium)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
                 }
-                
-                // Coordinates section
-                Section("Coordinates") {
-                    if let lat = flight.latitude {
-                        LabeledContent("Latitude", value: String(format: "%.6f°", lat))
-                    }
-                    if let lon = flight.longitude {
-                        LabeledContent("Longitude", value: String(format: "%.6f°", lon))
-                    }
-                }
-                
-                // Additional info
-                Section("Additional") {
-                    if let squawk = flight.squawk, !squawk.isEmpty {
-                        LabeledContent("Squawk", value: squawk)
-                    }
-                    LabeledContent("Last Update", value: formatDate(flight.lastContact))
-                }
+                .padding(.bottom, 40)
             }
             .navigationTitle("Flight Details")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-            #else
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button("Done") {
@@ -93,14 +110,6 @@ struct FlightDetailView: View {
                     }
                 }
             }
-            #endif
         }
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .medium
-        return formatter.string(from: date)
     }
 }
