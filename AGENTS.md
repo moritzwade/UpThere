@@ -188,6 +188,27 @@ log stream --predicate 'subsystem == "com.moritzwade.upthere" && level == 16' --
 log stream --predicate 'subsystem == "com.moritzwade.upthere" && category == "FlightService"' --level debug
 ```
 
+## Requirements Management
+
+Requirements are documented in `Requirements/` as Markdown files with YAML frontmatter. See [`Requirements/README.md`](Requirements/README.md) for the full specification.
+
+### ID Prefixes
+
+| Prefix | Category | Directory |
+|--------|----------|-----------|
+| `SYSREQ-*` | System | `core/` |
+| `UIREQ-*` | User Interface | `ui/` |
+| `NFREQ-*` | Non-Functional | `non-functional/` |
+
+### Keeping Requirements Up to Date
+
+- **When adding or changing a feature**, update the corresponding requirement file to reflect the new behavior
+- **When a requirement's behavior changes**, update its scenarios, acceptance criteria, and source file references
+- **When adding new functionality not yet covered by a requirement**, create a new requirement file with the next available ID in the appropriate category
+- **When deprecating a feature**, update the requirement status to `deprecated`
+- **Update `Requirements/README.md`** whenever you add, remove, or rename requirement files (keep the index table in sync)
+- Requirements and code should stay in sync — treat outdated requirements as a bug
+
 ## Development Workflow
 
 1. **After adding/removing files**: run `xcodegen generate`
