@@ -165,6 +165,40 @@ struct FlightTests {
         #expect(flight.coordinate == nil)
     }
     
+    // MARK: - Airline Designator Tests
+    
+    @Test
+    func testAirlineDesignatorFromValidCallsign() {
+        let state = createValidState(callsign: "UAL1234")
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        #expect(flight.airlineDesignator == "UAL")
+    }
+    
+    @Test
+    func testAirlineDesignatorFromCallsignWithSpaces() {
+        let state = createValidState(callsign: "  dal567  ")
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        #expect(flight.airlineDesignator == "DAL")
+    }
+    
+    @Test
+    func testAirlineDesignatorReturnsNilForShortCallsign() {
+        let state = createValidState(callsign: "AB")
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        #expect(flight.airlineDesignator == nil)
+    }
+    
+    @Test
+    func testAirlineDesignatorReturnsNilForNumericCallsign() {
+        let state = createValidState(callsign: "123456")
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        #expect(flight.airlineDesignator == nil)
+    }
+    
     // MARK: - Helper
     
     private func createValidState(

@@ -14,22 +14,7 @@ struct FlightDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 12) {
-                            Image(systemName: "airplane")
-                                .font(.system(size: 60))
-                                .foregroundColor(.orange)
-                                .rotationEffect(.degrees(flight.trueTrack ?? 0))
-                            
-                            Text(flight.formattedCallsign)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
+                    headerView
                     
                     // Trail map
                     if let trail = viewModel.selectedFlightTrail, trail.isValid {
@@ -42,6 +27,11 @@ struct FlightDetailView: View {
                         }
                         .padding()
                     }
+                    
+                    // Route info section (NEW)
+                    routeSection
+                    
+                    Divider()
                     
                     // Info
                     Group {
@@ -127,6 +117,179 @@ struct FlightDetailView: View {
             }
         }
     }
+    
+    // MARK: - Header View
+    
+    private var headerView: some View {
+        HStack {
+            Spacer()
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    // Airline logo (if available)
+                    if let logoURL = viewModel.selectedFlightRoute?.logoURL {
+                        AsyncImage(url: logoURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40)
+                            case .failure, .empty:
+                                airlineDesignatorBadge
+                            @unknown default:
+                                airlineDesignatorBadge
+                            }
+                        }
+                    } else {
+                        airlineDesignatorBadge
+                    }
+                    
+                    Image(systemName: "airplane")
+                        .font(.system(size: 60))
+                        .foregroundColor(.orange)
+                        .rotationEffect(.degrees(flight.trueTrack ?? 0))
+                }
+                
+                Text(flight.formattedCallsign)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                // Route display (e.g., "LAX → BOS")
+                if let route = viewModel.selectedFlightRoute?.formattedRoute {
+                    Text(route)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Flight status badge
+                if let status = viewModel.selectedFlightRoute?.displayStatus {
+                    Text(status)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(statusColor.opacity(0.15))
+                        .foregroundColor(statusColor)
+                        .clipShape(Capsule())
+                }
+            }
+            Spacer()
+        }
+        .padding()
+        .background(Color.orange.opacity(0.1))
+    }
+    
+    /// Airline designator badge when logo is unavailable
+    private var airlineDesignatorBadge: some View {
+        Group {
+            if let designator = flight.airlineDesignator {
+                Text(designator)
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(.orange)
+                    .frame(width: 40, height: 40)
+                    .background(Color.orange.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                Image(systemName: "airplane.circle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.orange.opacity(0.5))
+            }
+        }
+    }
+    
+    /// Status color based on route info
+    private var statusColor: Color {
+        guard let status = viewModel.selectedFlightRoute?.flightStatus?.lowercased() else { return .gray }
+        switch status {
+        case "active", "en-route", "en route":
+            return .green
+        case "landed":
+            return .blue
+        case "cancelled":
+            return .red
+        case "diverted":
+            return .orange
+        default:
+            return .gray
+        }
+    }
+    
+    // MARK: - Route Section
+    
+    @ViewBuilder
+    private var routeSection: some View {
+        if let route = viewModel.selectedFlightRoute, route.hasRouteData {
+            Group {
+                Text("Route").font(.headline)
+                
+                if let airline = route.formattedAirline {
+                    HStack {
+                        Text("Airline:")
+                        Spacer()
+                        Text(airline).fontWeight(.medium)
+                    }
+                }
+                
+                if let depAirport = route.departureAirportIata {
+                    HStack {
+                        Text("Origin:")
+                        Spacer()
+                        VStack(alignment: .trailing) {
+                            Text(depAirport).fontWeight(.medium)
+                            if let name = route.departureAirportName {
+                                Text(name)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                
+                if let arrAirport = route.arrivalAirportIata {
+                    HStack {
+                        Text("Destination:")
+                        Spacer()
+                        VStack(alignment: .trailing) {
+                            Text(arrAirport).fontWeight(.medium)
+                            if let name = route.arrivalAirportName {
+                                Text(name)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                
+                if let estimatedArrival = route.estimatedArrival {
+                    HStack {
+                        Text("Est. Arrival:")
+                        Spacer()
+                        Text(estimatedArrival, style: .time).fontWeight(.medium)
+                    }
+                } else if let scheduledArrival = route.scheduledArrival {
+                    HStack {
+                        Text("Scheduled Arrival:")
+                        Spacer()
+                        Text(scheduledArrival, style: .time).fontWeight(.medium)
+                    }
+                }
+            }
+            .padding(.horizontal)
+        } else if viewModel.isLoadingRoute {
+            Group {
+                Text("Route").font(.headline)
+                HStack {
+                    Spacer()
+                    ProgressView("Loading route info...")
+                    Spacer()
+                }
+            }
+            .padding(.horizontal)
+        }
+        // If no route data and not loading, we simply don't show the section
+    }
+    
+    // MARK: - Trail Map View
     
     @ViewBuilder
     private func trailMapView(trail: FlightTrail) -> some View {

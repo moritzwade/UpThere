@@ -23,9 +23,16 @@ class UpThereViewModel {
     /// Whether we're currently fetching historical data for the selected flight
     var isLoadingTrail = false
     
+    /// Route information for the selected flight (from AviationStack)
+    var selectedFlightRoute: FlightRouteInfo?
+    
+    /// Whether we're currently fetching route info for the selected flight
+    var isLoadingRoute = false
+    
     // MARK: - Services
     private let flightService: FlightService
     private let locationService: LocationService
+    private let routeService: FlightRouteService
     
     // MARK: - Configuration
     /// Search radius in kilometers (default 200km)
@@ -56,6 +63,7 @@ class UpThereViewModel {
     init() {
         self.flightService = FlightService()
         self.locationService = LocationService()
+        self.routeService = FlightRouteService()
     }
     
     // MARK: - Public Methods
@@ -77,6 +85,7 @@ class UpThereViewModel {
         locationService.stopUpdating()
         trails.removeAll()
         selectedFlightTrail = nil
+        selectedFlightRoute = nil
     }
     
     /// Manual refresh
@@ -198,19 +207,43 @@ class UpThereViewModel {
             // Tapping the same flight → deselect
             selectedFlight = nil
             selectedFlightTrail = nil
+            selectedFlightRoute = nil
             AppLogger.viewModel.debug("Deselected flight \(flight.id, privacy: .public)")
         } else if let flight = flight {
             // Selecting a new flight
             selectedFlight = flight
+            selectedFlightRoute = nil
             Task {
                 await fetchSelectedFlightTrail()
+                await fetchSelectedFlightRoute(flight: flight)
             }
             AppLogger.viewModel.debug("Selected flight \(flight.id, privacy: .public)")
         } else {
             // Deselecting (e.g., tapping empty space)
             selectedFlight = nil
             selectedFlightTrail = nil
+            selectedFlightRoute = nil
         }
+    }
+    
+    /// Fetch route information for the selected flight
+    private func fetchSelectedFlightRoute(flight: Flight) async {
+        isLoadingRoute = true
+        AppLogger.viewModel.debug("Fetching route info for \(flight.id, privacy: .public)")
+        
+        do {
+            selectedFlightRoute = try await routeService.fetchRoute(for: flight)
+            if selectedFlightRoute != nil {
+                AppLogger.viewModel.info("Route info fetched for \(flight.id, privacy: .public)")
+            } else {
+                AppLogger.viewModel.debug("No route data available for \(flight.id, privacy: .public)")
+            }
+        } catch {
+            AppLogger.viewModel.error("Failed to fetch route info: \(error.localizedDescription, privacy: .public)")
+            selectedFlightRoute = nil
+        }
+        
+        isLoadingRoute = false
     }
     
     /// Request location permission
