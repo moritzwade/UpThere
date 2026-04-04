@@ -1,0 +1,50 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - platform: iOS
+            scheme: UpThere
+          - platform: macOS
+            scheme: UpThereMac
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: List available iOS simulators
+        if: matrix.platform == 'iOS'
+        run: xcrun simctl list devices available | grep -E "iPhone|iPad"
+
+      - name: Run ${{ matrix.platform }} Tests
+        run: |
+          if [ "${{ matrix.platform }}" = "iOS" ]; then
+           xcodebuild test \
+               -project UpThere.xcodeproj \
+               -scheme ${{ matrix.scheme }} \
+               -destination 'platform=iOS Simulator,name=iPhone 17' \
+               CODE_SIGN_IDENTITY="" \
+               CODE_SIGNING_REQUIRED=NO \
+               CODE_SIGNING_ALLOWED=NO
+          else
+            xcodebuild test \
+              -project UpThere.xcodeproj \
+              -scheme ${{ matrix.scheme }} \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
+          fi
