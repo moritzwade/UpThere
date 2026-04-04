@@ -8,6 +8,9 @@ struct FlightListView: View {
     @Binding var showDetail: Bool
     @State private var sortOrder = SortOrder.distance
     
+    /// Whether the sidebar is visible in a split view context
+    var isSidebarVisible: Bool = true
+    
     enum SortOrder: String, CaseIterable {
         case callsign = "Callsign"
         case altitude = "Altitude"
@@ -50,8 +53,10 @@ struct FlightListView: View {
         }
         .navigationTitle("Flights (\(viewModel.flights.count))")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                sortMenu
+            if isSidebarVisible {
+                ToolbarItem(placement: .primaryAction) {
+                    sortMenu
+                }
             }
         }
         .overlay {
@@ -105,7 +110,14 @@ struct FlightRowView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Selection indicators (left side)
+            // Flight icon with rotation (always first, aligned for all rows)
+            Image(systemName: "airplane")
+                .font(.title2)
+                .foregroundColor(.orange)
+                .rotationEffect(.degrees(flight.trueTrack ?? 0))
+                .frame(width: 40)
+            
+            // Selection indicator (info button for selected flights)
             if isSelected {
                 Button {
                     showDetail = true
@@ -115,18 +127,7 @@ struct FlightRowView: View {
                         .font(.title3)
                 }
                 .buttonStyle(.plain)
-                
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.orange)
-                    .font(.title3)
             }
-            
-            // Flight icon with rotation
-            Image(systemName: "airplane")
-                .font(.title2)
-                .foregroundColor(.orange)
-                .rotationEffect(.degrees(flight.trueTrack ?? 0))
-                .frame(width: 40)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(flight.formattedCallsign)

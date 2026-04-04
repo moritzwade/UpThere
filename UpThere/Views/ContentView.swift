@@ -4,17 +4,19 @@ import SwiftUI
 struct ContentView: View {
     @State private var viewModel = UpThereViewModel()
     @State private var showDetail = false
+    @State private var columnVisibility = NavigationSplitViewVisibility.automatic
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
                 // iPad: Split view with list and map
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     FlightListView(
                         viewModel: viewModel,
                         onFlightTapped: { viewModel.selectFlight($0) },
-                        showDetail: $showDetail
+                        showDetail: $showDetail,
+                        isSidebarVisible: columnVisibility != .detailOnly
                     )
                     .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 400)
                 } detail: {
