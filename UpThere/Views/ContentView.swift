@@ -2,10 +2,17 @@ import SwiftUI
 
 /// Adaptive content view - split view on iPad, tab view on iPhone
 struct ContentView: View {
-    @State private var viewModel = UpThereViewModel()
+    @State private var viewModel: UpThereViewModel
+    @State private var settings: AppSettings
     @State private var showDetail = false
     @State private var columnVisibility = NavigationSplitViewVisibility.automatic
+    @State private var isShowingSettings = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    init(settings: AppSettings = .shared) {
+        self.settings = settings
+        self._viewModel = State(initialValue: UpThereViewModel(settings: settings))
+    }
     
     var body: some View {
         Group {
@@ -22,6 +29,7 @@ struct ContentView: View {
                 } detail: {
                     FlightMapView(
                         viewModel: viewModel,
+                        settings: settings,
                         onFlightTapped: { viewModel.selectFlight($0) },
                         showDetail: $showDetail
                     )
@@ -31,6 +39,7 @@ struct ContentView: View {
                 TabView {
                     FlightMapView(
                         viewModel: viewModel,
+                        settings: settings,
                         onFlightTapped: { viewModel.selectFlight($0) },
                         showDetail: $showDetail
                     )
@@ -58,6 +67,18 @@ struct ContentView: View {
         .sheet(isPresented: $showDetail) {
             if let flight = viewModel.selectedFlight {
                 FlightDetailView(flight: flight, viewModel: viewModel)
+            }
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView(settings: settings)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
             }
         }
     }

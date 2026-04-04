@@ -36,3 +36,53 @@ struct OpenSkyConfig {
         self.clientSecret = clientSecret
     }
 }
+
+// MARK: - Credential Resolution
+
+/// Result of resolving API credentials from multiple sources
+struct ResolvedCredentials {
+    let clientId: String?
+    let clientSecret: String?
+    /// Human-readable description of the source used, for logging
+    let sourceDescription: String
+
+    var isConfigured: Bool {
+        guard let clientId = clientId, !clientId.isEmpty,
+              let clientSecret = clientSecret, !clientSecret.isEmpty else {
+            return false
+        }
+        return true
+    }
+}
+
+extension ResolvedCredentials {
+    /// Resolve credentials with priority: custom settings → environment variables
+    @MainActor
+    static func resolve(from settings: AppSettings) -> ResolvedCredentials {
+        // Priority 1: Custom credentials from settings
+        if settings.hasCustomCredentials {
+            return ResolvedCredentials(
+                clientId: settings.customClientId,
+                clientSecret: settings.customClientSecret,
+                sourceDescription: "custom settings"
+            )
+        }
+
+        // Priority 2: Environment variables
+        let envConfig = OpenSkyConfig.default
+        if envConfig.isConfigured {
+            return ResolvedCredentials(
+                clientId: envConfig.clientId,
+                clientSecret: envConfig.clientSecret,
+                sourceDescription: "environment variables"
+            )
+        }
+
+        // No credentials available
+        return ResolvedCredentials(
+            clientId: nil,
+            clientSecret: nil,
+            sourceDescription: "none — unauthenticated"
+        )
+    }
+}

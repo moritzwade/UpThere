@@ -3,18 +3,21 @@ import os
 
 /// Service for fetching flight data from OpenSky Network API
 actor FlightService {
-    private let config: OpenSkyConfig
+    private var credentials: ResolvedCredentials
     private let session: URLSession
     
     // OAuth2 token management
     private var accessToken: String?
     private var tokenExpiresAt: Date?
     
+    // Track which credential source was last used (for logging)
+    private var lastCredentialSource: String?
+    
     private let decoder = JSONDecoder()
     
     /// Initializer for production use
-    nonisolated init(config: OpenSkyConfig = .default) {
-        self.config = config
+    init(credentials: ResolvedCredentials) {
+        self.credentials = credentials
         
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
@@ -23,20 +26,38 @@ actor FlightService {
     }
     
     /// Initializer with custom URLSession (for testing)
-    nonisolated init(config: OpenSkyConfig, session: URLSession) {
-        self.config = config
+    init(credentials: ResolvedCredentials, session: URLSession) {
+        self.credentials = credentials
         self.session = session
+    }
+    
+    /// Update credentials when settings change
+    func updateCredentials(_ newCredentials: ResolvedCredentials) {
+        // Clear cached token when credentials change
+        if credentials.sourceDescription != newCredentials.sourceDescription {
+            accessToken = nil
+            tokenExpiresAt = nil
+        }
+        credentials = newCredentials
+    }
+    
+    /// Log the credential source once at first use
+    private func logCredentialSource(_ source: String) {
+        guard lastCredentialSource != source else { return }
+        lastCredentialSource = source
+        AppLogger.flightService.info("Using API credentials from: \(source, privacy: .public)")
     }
     
     /// Fetch all flights within a bounding box
     func fetchFlights(in boundingBox: BoundingBox) async throws -> [Flight] {
+        logCredentialSource(credentials.sourceDescription)
         let url = try buildURL(for: boundingBox)
         AppLogger.flightService.debug("Fetching flights: \(url.absoluteString, privacy: .public)")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
         // Add authentication if configured
-        if config.isConfigured {
+        if credentials.isConfigured {
             let token = try await getAccessToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -60,7 +81,7 @@ actor FlightService {
                 AppLogger.flightService.warning("Received 401, refreshing token and retrying")
                 accessToken = nil
                 tokenExpiresAt = nil
-                if config.isConfigured {
+                if credentials.isConfigured {
                     let newToken = try await getAccessToken()
                     return try await fetchFlightsWithToken(newToken, boundingBox: boundingBox)
                 }
@@ -121,7 +142,7 @@ actor FlightService {
             return token
         }
         
-        guard config.isConfigured else {
+        guard credentials.isConfigured else {
             throw OpenSkyError.unauthorized
         }
         
@@ -130,12 +151,12 @@ actor FlightService {
     
     /// Refresh the OAuth2 access token
     private func refreshToken() async throws -> String {
-        guard let clientId = config.clientId,
-              let clientSecret = config.clientSecret else {
+        guard let clientId = credentials.clientId,
+              let clientSecret = credentials.clientSecret else {
             throw OpenSkyError.unauthorized
         }
         
-        let authURL = URL(string: config.authURL)!
+        let authURL = URL(string: OpenSkyConfig.default.authURL)!
         var request = URLRequest(url: authURL)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -186,7 +207,7 @@ actor FlightService {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
-        if config.isConfigured {
+        if credentials.isConfigured {
             let token = try await getAccessToken()
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -209,7 +230,7 @@ actor FlightService {
                 AppLogger.flightService.warning("Received 401 from history API, refreshing token and retrying")
                 accessToken = nil
                 tokenExpiresAt = nil
-                if config.isConfigured {
+                if credentials.isConfigured {
                     let newToken = try await getAccessToken()
                     return try await fetchFlightHistoryWithToken(newToken, icao24: icao24, timeFrom: timeFrom, timeTo: timeTo)
                 }
@@ -260,7 +281,7 @@ actor FlightService {
 
     /// Build URL with query parameters
     private func buildURL(for boundingBox: BoundingBox) throws -> URL {
-        var components = URLComponents(string: "\(config.baseURL)/states/all")
+        var components = URLComponents(string: "\(OpenSkyConfig.default.baseURL)/states/all")
         components?.queryItems = boundingBox.queryItems
 
         guard let url = components?.url else {
@@ -272,7 +293,7 @@ actor FlightService {
 
     /// Build URL for the flight history endpoint
     private func buildHistoryURL(icao24: String, timeFrom: Int, timeTo: Int) throws -> URL {
-        var components = URLComponents(string: "\(config.baseURL)/api/states/all")
+        var components = URLComponents(string: "\(OpenSkyConfig.default.baseURL)/api/states/all")
         components?.queryItems = [
             URLQueryItem(name: "icao24", value: icao24),
             URLQueryItem(name: "time", value: String(timeFrom)),
