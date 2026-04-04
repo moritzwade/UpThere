@@ -205,3 +205,80 @@ log stream --predicate 'subsystem == "com.moritzwade.upthere" && category == "Fl
 4. **Commit**: use gitmoji format (see Git Commit Conventions above)
 5. **PR**: create a pull request with a clear summary of changes
    - **Always include `Closes #<issue id>`** in the PR body to auto-close the linked issue on merge
+
+## Git Worktree Workflow
+
+All feature development and bug fixes MUST use **git worktrees**. Never work directly in the main `UpThere/` checkout. Each worktree maps 1:1 to a GitHub issue, enabling safe parallel development by multiple agents.
+
+### Directory Layout
+
+```
+UpThere/                    ← main checkout (master only, never edit here)
+└── ../UpThere-worktrees/   ← all feature worktrees live here (sibling directory)
+    ├── issue-11-logging/   ← worktree for issue #11
+    ├── issue-42-fix-crash/ ← worktree for issue #42
+    └── ...
+```
+
+### Branch Naming
+
+Format: `issue/<number>/<short-slug>`
+
+Examples:
+- `issue/11/logging-system`
+- `issue/42/fix-map-crash`
+
+### Process
+
+**1. Check for existing worktree** (ALWAYS do this first):
+```bash
+git worktree list | grep "issue/<num>"
+```
+- If a worktree exists for the issue → **use it**, don't create a new one
+- If no worktree exists → proceed to step 2
+
+**2. Create a worktree** (from `master`, one per issue):
+```bash
+git worktree add ../UpThere-worktrees/issue-<num>-<slug> -b issue/<num>/<slug> master
+```
+
+**3. Work in the worktree:**
+```bash
+cd ../UpThere-worktrees/issue-<num>-<slug>
+# implement, build, test
+```
+
+**4. Commit and push:**
+```bash
+git add -A && git commit -m "<gitmoji> <message>"
+git push -u origin issue/<num>/<slug>
+```
+
+**5. Create PR** with `Closes #<num>` in the body.
+
+**6. After merge, wait for user confirmation** that the implementation is complete, then clean up:
+```bash
+git worktree remove ../UpThere-worktrees/issue-<num>-<slug>
+git branch -d issue/<num>/<slug>
+git push origin --delete issue/<num>/<slug>
+```
+
+### Rules for Agents
+
+- **NEVER edit files in the main `UpThere/` checkout** — always create/use a worktree
+- **Always check `git worktree list` first** — reuse existing worktrees for the same issue
+- **One worktree per issue** — never create duplicates
+- **Always branch from `master`** — never from another feature branch
+- **Run `xcodegen generate`** inside the worktree after adding/removing files
+- **Build and test** before committing
+- **Clean up** the worktree only after the user confirms the work is done and the PR is merged
+
+### Useful Commands
+
+```bash
+# List all active worktrees
+git worktree list
+
+# Prune stale worktree references
+git worktree prune
+```
