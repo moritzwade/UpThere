@@ -5,6 +5,7 @@ import MapKit
 struct FlightDetailView: View {
     let flight: Flight
     @Bindable var viewModel: UpThereViewModel
+    @Bindable var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
     
     @State private var cameraPosition: MapCameraPosition = .automatic
@@ -59,18 +60,18 @@ struct FlightDetailView: View {
                     // Position
                     Group {
                         Text("Position").font(.headline)
-                        if let altitude = flight.altitudeFeet {
+                        if let altitude = settings.altitudeUnit == .meters ? flight.baroAltitude : flight.altitudeFeet {
                             HStack {
                                 Text("Altitude:")
                                 Spacer()
-                                Text("\(Int(altitude).formatted()) ft").fontWeight(.medium)
+                                Text("\(Int(altitude).formatted()) \(settings.altitudeUnit.symbol)").fontWeight(.medium)
                             }
                         }
-                        if let speed = flight.speedKnots {
+                        if let speed = settings.speedUnit == .kmh ? flight.speedKmh : flight.speedKnots {
                             HStack {
                                 Text("Speed:")
                                 Spacer()
-                                Text("\(Int(speed)) knots").fontWeight(.medium)
+                                Text("\(Int(speed)) \(settings.speedUnit.symbol)").fontWeight(.medium)
                             }
                         }
                         if let track = flight.trueTrack {

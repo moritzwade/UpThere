@@ -155,4 +155,62 @@ struct AppSettingsTests {
         #expect(AppMapStyle.satellite.displayName == "Satellite")
         #expect(AppMapStyle.hybrid.displayName == "Hybrid")
     }
+
+    // MARK: - Unit Preference Defaults
+
+    @Test
+    func testDefaultAltitudeUnit() {
+        let settings = AppSettings()
+        #expect(settings.altitudeUnit == .meters)
+    }
+
+    @Test
+    func testDefaultSpeedUnit() {
+        let settings = AppSettings()
+        #expect(settings.speedUnit == .kmh)
+    }
+
+    @Test
+    func testAltitudeUnitPersistence() {
+        let settings = AppSettings()
+        settings.altitudeUnit = .feet
+        #expect(settings.altitudeUnit == .feet)
+
+        let fresh = AppSettings()
+        #expect(fresh.altitudeUnit == .feet)
+
+        UserDefaults.standard.removeObject(forKey: "upthere.altitudeUnit")
+    }
+
+    @Test
+    func testSpeedUnitPersistence() {
+        let settings = AppSettings()
+        settings.speedUnit = .knots
+        #expect(settings.speedUnit == .knots)
+
+        let fresh = AppSettings()
+        #expect(fresh.speedUnit == .knots)
+
+        UserDefaults.standard.removeObject(forKey: "upthere.speedUnit")
+    }
+
+    // MARK: - Unit Enum Cases
+
+    @Test
+    func testAltitudeUnitCases() {
+        #expect(AltitudeUnit.allCases.count == 2)
+        #expect(AltitudeUnit.meters.displayName == "Meters (m)")
+        #expect(AltitudeUnit.feet.displayName == "Feet (ft)")
+        #expect(AltitudeUnit.meters.symbol == "m")
+        #expect(AltitudeUnit.feet.symbol == "ft")
+    }
+
+    @Test
+    func testSpeedUnitCases() {
+        #expect(SpeedUnit.allCases.count == 2)
+        #expect(SpeedUnit.kmh.displayName == "km/h")
+        #expect(SpeedUnit.knots.displayName == "Knots (kt)")
+        #expect(SpeedUnit.kmh.symbol == "km/h")
+        #expect(SpeedUnit.knots.symbol == "kt")
+    }
 }

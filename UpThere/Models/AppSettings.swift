@@ -86,6 +86,52 @@ enum SearchRadius: Double, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Unit Preferences
+
+/// Altitude display unit
+enum AltitudeUnit: String, CaseIterable, Identifiable {
+    case meters
+    case feet
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .meters: "Meters (m)"
+        case .feet: "Feet (ft)"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .meters: "m"
+        case .feet: "ft"
+        }
+    }
+}
+
+/// Speed display unit
+enum SpeedUnit: String, CaseIterable, Identifiable {
+    case kmh
+    case knots
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .kmh: "km/h"
+        case .knots: "Knots (kt)"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .kmh: "km/h"
+        case .knots: "kt"
+        }
+    }
+}
+
 // MARK: - AppSettings
 
 /// Application-wide settings persisted via UserDefaults
@@ -138,6 +184,18 @@ final class AppSettings {
         }
     }
 
+    var altitudeUnit: AltitudeUnit {
+        didSet {
+            UserDefaults.standard.set(self.altitudeUnit.rawValue, forKey: Keys.altitudeUnit)
+        }
+    }
+
+    var speedUnit: SpeedUnit {
+        didSet {
+            UserDefaults.standard.set(self.speedUnit.rawValue, forKey: Keys.speedUnit)
+        }
+    }
+
     // MARK: - Computed Helpers
 
     /// The effective refresh interval, or nil when in manual mode
@@ -166,6 +224,8 @@ final class AppSettings {
         static let mapStyle = "upthere.mapStyle"
         static let customClientId = "upthere.customClientId"
         static let customClientSecret = "upthere.customClientSecret"
+        static let altitudeUnit = "upthere.altitudeUnit"
+        static let speedUnit = "upthere.speedUnit"
     }
 
     /// Internal initializer for testing; reads from UserDefaults
@@ -192,6 +252,20 @@ final class AppSettings {
 
         self.customClientId = UserDefaults.standard.string(forKey: Keys.customClientId) ?? ""
         self.customClientSecret = UserDefaults.standard.string(forKey: Keys.customClientSecret) ?? ""
+
+        if let raw = UserDefaults.standard.string(forKey: Keys.altitudeUnit),
+           let unit = AltitudeUnit(rawValue: raw) {
+            self.altitudeUnit = unit
+        } else {
+            self.altitudeUnit = .meters
+        }
+
+        if let raw = UserDefaults.standard.string(forKey: Keys.speedUnit),
+           let unit = SpeedUnit(rawValue: raw) {
+            self.speedUnit = unit
+        } else {
+            self.speedUnit = .kmh
+        }
     }
 
     // MARK: - Test Helpers
@@ -204,6 +278,8 @@ final class AppSettings {
         self.mapStyle = .standard
         self.customClientId = customClientId
         self.customClientSecret = customClientSecret
+        self.altitudeUnit = .meters
+        self.speedUnit = .kmh
     }
 
     /// Create a test instance with a given OpenSkyConfig (bypasses UserDefaults)

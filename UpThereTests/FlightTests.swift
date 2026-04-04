@@ -122,6 +122,24 @@ struct FlightTests {
     }
     
     @Test
+    func testSpeedKmhConversion() {
+        let state = createValidState(velocity: 250.5) // m/s
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        // 250.5 m/s * 3.6 = 901.8 km/h
+        #expect(flight.speedKmh != nil)
+        #expect(abs(flight.speedKmh! - 901.8) < 0.1)
+    }
+    
+    @Test
+    func testSpeedKmhReturnsNilWhenNoVelocity() {
+        let state = createValidState(velocity: nil)
+        let flight = Flight(from: state, lastUpdate: Date())!
+        
+        #expect(flight.speedKmh == nil)
+    }
+    
+    @Test
     func testVerticalRateFPMConversion() {
         let state = createValidState(verticalRate: 5.0) // m/s
         let flight = Flight(from: state, lastUpdate: Date())!

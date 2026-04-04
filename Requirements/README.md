@@ -13,7 +13,9 @@ Requirements/
 │   ├── SYSREQ-003-authentication.md
 │   ├── SYSREQ-004-auto-refresh.md
 │   ├── SYSREQ-005-manual-refresh.md
-│   └── SYSREQ-006-error-handling.md
+│   ├── SYSREQ-006-error-handling.md
+│   ├── SYSREQ-007-flight-trails.md
+│   └── SYSREQ-008-settings-panel.md
 ├── ui/                             ← User interface requirements (UIREQ-*)
 │   ├── UIREQ-001-flight-list-view.md
 │   ├── UIREQ-002-flight-map-view.md
@@ -84,6 +86,7 @@ Scenarios are structured for future automated UI test generation. Each scenario 
 | [SYSREQ-005](core/SYSREQ-005-manual-refresh.md) | Manual Refresh | medium | implemented |
 | [SYSREQ-006](core/SYSREQ-006-error-handling.md) | Error Handling | medium | implemented |
 | [SYSREQ-007](core/SYSREQ-007-flight-trails.md) | Flight Trails | medium | implemented |
+| [SYSREQ-008](core/SYSREQ-008-settings-panel.md) | Settings Panel | high | implemented |
 
 ### User Interface Requirements (UIREQ-*)
 
