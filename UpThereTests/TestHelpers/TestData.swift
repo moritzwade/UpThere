@@ -86,4 +86,26 @@ enum TestData {
         "states": []
     }
     """.data(using: .utf8)!
+    
+    // MARK: - Historical Flight Data
+    
+    /// Valid historical flight history response
+    static let validHistoryResponse = """
+    {
+        "time": 1704067200,
+        "states": [
+            ["3c6444", "UAL1234 ", "United States", 1704063600, 1704063600, -122.5000, 37.7000, 10000.0, false, 250.0, 180.0, 5.0, null, null, "1234", false, 0, 4],
+            ["3c6444", "UAL1234 ", "United States", 1704065400, 1704065400, -122.4500, 37.7400, 10500.0, false, 255.0, 182.0, 3.0, null, null, "1234", false, 0, 4],
+            ["3c6444", "UAL1234 ", "United States", 1704067200, 1704067200, -122.4194, 37.7749, 10000.0, false, 250.5, 180.0, 5.0, null, null, "1234", false, 0, 4]
+        ]
+    }
+    """.data(using: .utf8)!
+    
+    /// Historical response with no states
+    static let emptyHistoryResponse = """
+    {
+        "time": 1704067200,
+        "states": []
+    }
+    """.data(using: .utf8)!
 }

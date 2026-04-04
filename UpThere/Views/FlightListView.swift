@@ -4,7 +4,8 @@ import CoreLocation
 /// List view showing all flights
 struct FlightListView: View {
     @Bindable var viewModel: UpThereViewModel
-    var onFlightSelected: FlightSelectionHandler?
+    var onFlightTapped: FlightSelectionHandler?
+    @Binding var showDetail: Bool
     @State private var sortOrder = SortOrder.distance
     
     enum SortOrder: String, CaseIterable {
@@ -30,11 +31,18 @@ struct FlightListView: View {
     
     var body: some View {
         List(sortedFlights) { flight in
-            FlightRowView(flight: flight, userLocation: viewModel.userLocation)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onFlightSelected?(flight)
-                }
+            FlightRowView(
+                flight: flight,
+                userLocation: viewModel.userLocation,
+                isSelected: viewModel.selectedFlight?.id == flight.id,
+                onTapped: { onFlightTapped?(flight) },
+                showDetail: $showDetail
+            )
+            .listRowBackground(
+                viewModel.selectedFlight?.id == flight.id
+                    ? Color.orange.opacity(0.1)
+                    : Color.clear
+            )
         }
         .listStyle(.plain)
         .refreshable {
@@ -91,9 +99,28 @@ struct FlightListView: View {
 struct FlightRowView: View {
     let flight: Flight
     let userLocation: CLLocation?
+    let isSelected: Bool
+    let onTapped: () -> Void
+    @Binding var showDetail: Bool
     
     var body: some View {
         HStack(spacing: 12) {
+            // Selection indicators (left side)
+            if isSelected {
+                Button {
+                    showDetail = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(.orange)
+                        .font(.title3)
+                }
+                .buttonStyle(.plain)
+                
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.orange)
+                    .font(.title3)
+            }
+            
             // Flight icon with rotation
             Image(systemName: "airplane")
                 .font(.title2)
@@ -136,5 +163,9 @@ struct FlightRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTapped()
+        }
     }
 }
