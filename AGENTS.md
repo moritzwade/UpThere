@@ -75,3 +75,133 @@ IMPORTANT: `todos` MUST be an array `[...]`, NOT a string `"[...]"`. Never strin
 - The `edit` tool uses `oldString`/`newString` (camelCase), NOT `old_string`/`new_string`.
 - Do NOT call tools that don't exist. Available tools: bash, read, write, edit, glob, grep, task, webfetch, todowrite, question, skill.
 - There is NO `list` tool. To list files use `bash` with `ls`.
+
+## Git Commit Conventions
+
+- **ALWAYS use a gitmoji** at the start of every commit title.
+- Format: `<gitmoji> <type>: <description>` or `<gitmoji> <description>`
+- Common gitmojis:
+  - ✨ `:sparkles:` — new feature
+  - 🐛 `:bug:` — bug fix
+  - 🔧 `:wrench:` — configuration/tooling
+  - 🧪 `:test_tube:` — tests
+  - 📝 `:memo:` — documentation
+  - 🔒 `:lock:` — security
+  - 🎨 `:art:` — UI/style
+  - ♻️ `:recycle:` — refactoring
+  - 🚀 `:rocket:` — deployment/performance
+  - 🗑️ `:wastebasket:` — deprecation/removal
+
+## Project Architecture
+
+### Tech Stack
+- **Language**: Swift 5.9
+- **UI**: SwiftUI with `@Observable` macro (iOS 17+ / macOS 14.0+)
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Project Generator**: XcodeGen — **always run `xcodegen generate` after adding or removing files**
+
+### Directory Structure
+```
+UpThere/
+├── App/              — @main entry point
+├── Models/           — Data models (Flight, OpenSkyResponse)
+├── Services/         — Network, location, and logging (FlightService, LocationService, Logger)
+├── ViewModels/       — @Observable view models (UpThereViewModel)
+└── Views/            — SwiftUI views (ContentView, FlightListView, FlightMapView, FlightDetailView)
+
+UpThereTests/
+├── TestHelpers/      — Test fixtures (TestData.swift)
+└── MockData/         — MockURLProtocol for network mocking
+```
+
+### Key Patterns
+- `FlightService` is an `actor` for thread-safe concurrent access
+- OAuth2 token management with automatic refresh (client credentials flow)
+- Platform-conditional compilation with `#if os(macOS)` / `#if os(iOS)`
+- Excludes: `*.macos.swift` files from iOS target, `*.ios.swift` files from macOS target
+
+## Testing
+
+### Framework
+- **Swift Testing** (`import Testing`), **not** XCTest
+- Use `@Test` for test functions, `#expect()` for assertions
+
+### Conventions
+- Test files: `UpThereTests/*Tests.swift`
+- Test methods: `test*` naming (e.g., `testFetchFlightsSuccess`)
+- Group related tests with `// MARK:` comments
+- **Always add tests for new features and update tests when behavior changes**
+
+### Mocking
+- **Network**: `MockURLProtocol` — set `MockURLProtocol.requestHandler` to intercept URLRequests
+- **Services**: Inject custom `URLSession` via `FlightService(config:session:)` initializer
+- **Test data**: Use `TestData` helpers for JSON fixtures
+
+### Running Tests
+```bash
+# iOS
+xcodebuild -project UpThere.xcodeproj -scheme UpThere \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test
+
+# macOS
+xcodebuild -project UpThere.xcodeproj -scheme UpThereMac \
+  -destination 'platform=macOS,arch=arm64' test
+```
+
+## Logging
+
+### Framework
+- Apple's `os.Logger` via the centralized `AppLogger` enum (`UpThere/Services/Logger.swift`)
+- Subsystem: `com.moritzwade.upthere`
+- Categories: `FlightService`, `LocationService`, `ViewModel`
+
+### Rules
+- **NEVER use `print()`** — always use `AppLogger`
+- **Always add logging to new features** following the established log level strategy
+- Use `privacy: .public` for non-sensitive values (counts, status codes, coordinates)
+- Use default (private) privacy for sensitive data (tokens, auth details)
+
+### Usage
+```swift
+AppLogger.flightService.debug("Fetching flights: \(url.absoluteString, privacy: .public)")
+AppLogger.viewModel.info("Starting flight tracking")
+AppLogger.locationService.error("Location update failed: \(error.localizedDescription, privacy: .public)")
+```
+
+### Log Level Guide
+| Level | Use Case |
+|-------|----------|
+| `debug` | Verbose: URLs, coordinates, counts, token expiry, bounding box details |
+| `info` | Key events: tracking start/stop, flights fetched, auth granted |
+| `warning` | Recoverable: token refresh, rate limits, missing location, unauthorized state |
+| `error` | Failures: network errors, auth failures, location failures, parsing errors |
+
+### Viewing Logs
+```bash
+# All logs
+log stream --predicate 'subsystem == "com.moritzwade.upthere"' --level debug
+
+# Errors only
+log stream --predicate 'subsystem == "com.moritzwade.upthere" && level == 16' --level error
+
+# By component
+log stream --predicate 'subsystem == "com.moritzwade.upthere" && category == "FlightService"' --level debug
+```
+
+## Development Workflow
+
+1. **After adding/removing files**: run `xcodegen generate`
+2. **Before committing**: build both targets and run all tests
+3. **Build commands**:
+   ```bash
+   # iOS
+   xcodebuild -project UpThere.xcodeproj -scheme UpThere \
+     -destination 'platform=iOS Simulator,name=iPhone 17' build
+
+   # macOS
+   xcodebuild -project UpThere.xcodeproj -scheme UpThereMac \
+     -destination 'platform=macOS,arch=arm64' build
+   ```
+4. **Commit**: use gitmoji format (see Git Commit Conventions above)
+5. **PR**: create a pull request with a clear summary of changes
+   - **Always include `Closes #<issue id>`** in the PR body to auto-close the linked issue on merge

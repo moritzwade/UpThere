@@ -63,3 +63,43 @@ open build/Debug/UpThere.app
 ## Data Source
 
 Uses the [OpenSky Network API](https://opensky-network.org/) for real-time flight data.
+
+## Debugging
+
+The app uses structured logging via Apple's `os.Logger` framework. All logs use the subsystem `com.moritzwade.upthere` with per-component categories: `FlightService`, `LocationService`, and `ViewModel`.
+
+### Viewing Logs
+
+**Console.app:** Filter by subsystem `com.moritzwade.upthere`.
+
+**Command line:**
+
+```bash
+# Stream all logs
+log stream --predicate 'subsystem == "com.moritzwade.upthere"' --level debug
+
+# Only errors
+log stream --predicate 'subsystem == "com.moritzwade.upthere" && level == 16' --level error
+
+# Only FlightService logs
+log stream --predicate 'subsystem == "com.moritzwade.upthere" && category == "FlightService"' --level debug
+```
+
+### Log Levels
+
+| Level | Use Case |
+|-------|----------|
+| `debug` | Verbose: request URLs, location coords, refresh counts |
+| `info` | Key events: tracking start/stop, flights fetched, auth granted |
+| `warning` | Recoverable issues: token refresh, rate limits, missing location |
+| `error` | Failures: network errors, auth failures, location failures |
+
+### Adding New Log Statements
+
+Use the centralized `AppLogger` enum:
+
+```swift
+AppLogger.flightService.debug("Building request URL")
+AppLogger.viewModel.info("Tracking started")
+AppLogger.locationService.error("Location failed", error: someError)
+```

@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import Observation
+import os
 
 /// Main ViewModel for flight tracking
 @Observable
@@ -52,6 +53,7 @@ class UpThereViewModel {
     
     /// Start tracking flights
     func startTracking() {
+        AppLogger.viewModel.info("Starting flight tracking")
         locationService.startUpdating()
         startAutoRefresh()
         Task {
@@ -61,6 +63,7 @@ class UpThereViewModel {
     
     /// Stop tracking flights
     func stopTracking() {
+        AppLogger.viewModel.info("Stopping flight tracking")
         stopAutoRefresh()
         locationService.stopUpdating()
     }
@@ -73,6 +76,9 @@ class UpThereViewModel {
         errorMessage = nil
         
         let location = userLocation ?? LocationService.defaultLocation
+        if userLocation == nil {
+            AppLogger.viewModel.warning("No user location available, using default location")
+        }
         
         do {
             let boundingBox = BoundingBox.around(
@@ -80,11 +86,14 @@ class UpThereViewModel {
                 longitude: location.coordinate.longitude,
                 radiusKm: searchRadiusKm
             )
+            AppLogger.viewModel.debug("Fetching flights in bounding box")
             
-            flights = try await flightService.fetchFlights(in: boundingBox)
+            self.flights = try await flightService.fetchFlights(in: boundingBox)
             lastUpdateTime = Date()
+            AppLogger.viewModel.debug("Refresh complete: \(self.flights.count, privacy: .public) flights")
         } catch {
             errorMessage = error.localizedDescription
+            AppLogger.viewModel.error("Refresh failed: \(error.localizedDescription, privacy: .public)")
         }
         
         isLoading = false
