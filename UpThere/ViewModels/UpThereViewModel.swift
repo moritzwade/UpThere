@@ -33,6 +33,7 @@ class UpThereViewModel {
     private let flightService: FlightService
     private let locationService: LocationService
     private let routeService: FlightRouteService
+    private let settings: AppSettings
     
     // MARK: - Configuration
     /// Search radius in kilometers (default 200km)
@@ -58,10 +59,13 @@ class UpThereViewModel {
     
     // MARK: - Private
     private var refreshTask: Task<Void, Never>?
+    private var settingsObserverTask: Task<Void, Never>?
     
     // MARK: - Initialization
-    init() {
-        self.flightService = FlightService()
+    init(settings: AppSettings = .shared) {
+        self.settings = settings
+        let credentials = ResolvedCredentials.resolve(from: settings)
+        self.flightService = FlightService(credentials: credentials)
         self.locationService = LocationService()
         self.routeService = FlightRouteService()
     }
@@ -72,6 +76,7 @@ class UpThereViewModel {
     func startTracking() {
         AppLogger.viewModel.info("Starting flight tracking")
         locationService.startUpdating()
+        observeSettingsChanges()
         startAutoRefresh()
         Task {
             await refreshFlights()
@@ -82,6 +87,8 @@ class UpThereViewModel {
     func stopTracking() {
         AppLogger.viewModel.info("Stopping flight tracking")
         stopAutoRefresh()
+        settingsObserverTask?.cancel()
+        settingsObserverTask = nil
         locationService.stopUpdating()
         trails.removeAll()
         selectedFlightTrail = nil
@@ -104,7 +111,7 @@ class UpThereViewModel {
             let boundingBox = BoundingBox.around(
                 latitude: location.coordinate.latitude,
                 longitude: location.coordinate.longitude,
-                radiusKm: searchRadiusKm
+                radiusKm: settings.searchRadius.rawValue
             )
             AppLogger.viewModel.debug("Fetching flights in bounding box")
             
@@ -253,17 +260,56 @@ class UpThereViewModel {
     
     // MARK: - Private Methods
     
+    /// Observe settings changes and react accordingly
+    private func observeSettingsChanges() {
+        settingsObserverTask?.cancel()
+        settingsObserverTask = Task { [weak self] in
+            guard let self = self else { return }
+            var lastRefreshOption = self.settings.refreshOption
+            var lastHasCredentials = self.settings.hasCustomCredentials
+            
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 500_000_000) // poll every 500ms
+                guard !Task.isCancelled else { return }
+                
+                let currentRefreshOption = self.settings.refreshOption
+                let currentHasCredentials = self.settings.hasCustomCredentials
+                
+                // Restart auto-refresh if interval option changed
+                if currentRefreshOption != lastRefreshOption {
+                    lastRefreshOption = currentRefreshOption
+                    self.startAutoRefresh()
+                }
+                
+                // Update FlightService credentials if they changed
+                if currentHasCredentials != lastHasCredentials {
+                    lastHasCredentials = currentHasCredentials
+                    let credentials = ResolvedCredentials.resolve(from: self.settings)
+                    await self.flightService.updateCredentials(credentials)
+                }
+            }
+        }
+    }
+    
     private func startAutoRefresh() {
         stopAutoRefresh()
+        
+        // Manual mode: no auto-refresh
+        guard let interval = settings.effectiveRefreshInterval else {
+            AppLogger.viewModel.info("Auto-refresh disabled (manual mode)")
+            return
+        }
+        
         refreshTask = Task { [weak self] in
             guard let self = self else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(self.refreshInterval * 1_000_000_000))
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
                 if !Task.isCancelled {
                     await self.refreshFlights()
                 }
             }
         }
+        AppLogger.viewModel.debug("Auto-refresh started with interval: \(interval, privacy: .public)s")
     }
     
     private func stopAutoRefresh() {

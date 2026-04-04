@@ -23,6 +23,15 @@ struct FlightServiceTests {
         return URLSession(configuration: configuration)
     }
     
+    /// Creates test credentials with the given client ID and secret
+    private func makeCredentials(clientId: String, clientSecret: String) -> ResolvedCredentials {
+        ResolvedCredentials(
+            clientId: clientId,
+            clientSecret: clientSecret,
+            sourceDescription: "test"
+        )
+    }
+    
     // MARK: - Successful API Calls
     
     @Test
@@ -42,8 +51,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         let flights = try await service.fetchFlights(in: boundingBox)
         
@@ -68,8 +77,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         let flights = try await service.fetchFlights(in: boundingBox)
         
@@ -91,8 +100,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         let flights = try await service.fetchFlights(in: boundingBox)
         
@@ -116,8 +125,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         do {
             _ = try await service.fetchFlights(in: boundingBox)
@@ -134,8 +143,8 @@ struct FlightServiceTests {
             return (response, "Unauthorized".data(using: .utf8)!)
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         do {
             _ = try await service.fetchFlights(in: boundingBox)
@@ -160,8 +169,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         do {
             _ = try await service.fetchFlights(in: boundingBox)
@@ -180,8 +189,8 @@ struct FlightServiceTests {
             throw networkError
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         do {
             _ = try await service.fetchFlights(in: boundingBox)
@@ -220,8 +229,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         let positions = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)
         
@@ -246,8 +255,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         let positions = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)
         
@@ -269,8 +278,8 @@ struct FlightServiceTests {
             }
         }
         
-        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
-        let service = FlightService(config: config, session: session)
+        let credentials = makeCredentials(clientId: "test", clientSecret: "test")
+        let service = FlightService(credentials: credentials, session: session)
         
         do {
             _ = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)

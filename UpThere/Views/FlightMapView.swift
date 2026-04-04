@@ -7,6 +7,7 @@ typealias FlightSelectionHandler = (Flight) -> Void
 /// Map view showing flights as annotations
 struct FlightMapView: View {
     @Bindable var viewModel: UpThereViewModel
+    @Bindable var settings: AppSettings
     var onFlightTapped: FlightSelectionHandler?
     @Binding var showDetail: Bool
     
@@ -60,6 +61,7 @@ struct FlightMapView: View {
                 // Tap on empty map area → deselect
                 viewModel.selectFlight(nil)
             }
+            .mapStyle(settings.mapStyle.mapStyle)
             .mapControls {
                 MapUserLocationButton()
                 MapCompass()
