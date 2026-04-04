@@ -83,5 +83,17 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView(settings: settings)
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+            }
+        }
     }
 }
