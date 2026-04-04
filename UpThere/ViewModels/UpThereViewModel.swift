@@ -67,7 +67,7 @@ class UpThereViewModel {
         let credentials = ResolvedCredentials.resolve(from: settings)
         self.flightService = FlightService(credentials: credentials)
         self.locationService = LocationService()
-        self.routeService = FlightRouteService()
+        self.routeService = FlightRouteService(apiKey: settings.resolvedAviationStackKey)
     }
     
     // MARK: - Public Methods
@@ -267,6 +267,7 @@ class UpThereViewModel {
             guard let self = self else { return }
             var lastRefreshOption = self.settings.refreshOption
             var lastHasCredentials = self.settings.hasCustomCredentials
+            var lastAviationStackKey = self.settings.resolvedAviationStackKey
             
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 500_000_000) // poll every 500ms
@@ -274,6 +275,7 @@ class UpThereViewModel {
                 
                 let currentRefreshOption = self.settings.refreshOption
                 let currentHasCredentials = self.settings.hasCustomCredentials
+                let currentAviationStackKey = self.settings.resolvedAviationStackKey
                 
                 // Restart auto-refresh if interval option changed
                 if currentRefreshOption != lastRefreshOption {
@@ -286,6 +288,12 @@ class UpThereViewModel {
                     lastHasCredentials = currentHasCredentials
                     let credentials = ResolvedCredentials.resolve(from: self.settings)
                     await self.flightService.updateCredentials(credentials)
+                }
+                
+                // Update AviationStack API key if it changed
+                if currentAviationStackKey != lastAviationStackKey {
+                    lastAviationStackKey = currentAviationStackKey
+                    await self.routeService.updateApiKey(currentAviationStackKey)
                 }
             }
         }

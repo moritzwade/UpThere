@@ -196,6 +196,12 @@ final class AppSettings {
         }
     }
 
+    var aviationStackApiKey: String {
+        didSet {
+            UserDefaults.standard.set(self.aviationStackApiKey, forKey: Keys.aviationStackApiKey)
+        }
+    }
+
     // MARK: - Computed Helpers
 
     /// The effective refresh interval, or nil when in manual mode
@@ -215,6 +221,17 @@ final class AppSettings {
         !customClientId.isEmpty && !customClientSecret.isEmpty
     }
 
+    /// Whether an AviationStack API key is configured (settings or env var)
+    var hasAviationStackKey: Bool {
+        !aviationStackApiKey.isEmpty || AviationStackConfig.default.isConfigured
+    }
+
+    /// Resolve the AviationStack API key with priority: settings → env var
+    var resolvedAviationStackKey: String? {
+        if !aviationStackApiKey.isEmpty { return aviationStackApiKey }
+        return AviationStackConfig.default.apiKey
+    }
+
     // MARK: - Private
 
     private enum Keys {
@@ -226,6 +243,7 @@ final class AppSettings {
         static let customClientSecret = "upthere.customClientSecret"
         static let altitudeUnit = "upthere.altitudeUnit"
         static let speedUnit = "upthere.speedUnit"
+        static let aviationStackApiKey = "upthere.aviationStackApiKey"
     }
 
     /// Internal initializer for testing; reads from UserDefaults
@@ -266,12 +284,14 @@ final class AppSettings {
         } else {
             self.speedUnit = .kmh
         }
+
+        self.aviationStackApiKey = UserDefaults.standard.string(forKey: Keys.aviationStackApiKey) ?? ""
     }
 
     // MARK: - Test Helpers
 
     /// Private initializer that bypasses UserDefaults (for testing)
-    private init(customClientId: String, customClientSecret: String) {
+    private init(customClientId: String, customClientSecret: String, aviationStackApiKey: String = "") {
         self.searchRadius = .twoHundred
         self.refreshOption = .often
         self.customRefreshSeconds = 10
@@ -280,6 +300,7 @@ final class AppSettings {
         self.customClientSecret = customClientSecret
         self.altitudeUnit = .meters
         self.speedUnit = .kmh
+        self.aviationStackApiKey = aviationStackApiKey
     }
 
     /// Create a test instance with a given OpenSkyConfig (bypasses UserDefaults)

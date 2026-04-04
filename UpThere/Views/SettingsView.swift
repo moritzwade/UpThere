@@ -12,7 +12,8 @@ struct SettingsView: View {
                 refreshIntervalSection
                 mapStyleSection
                 unitsSection
-                apiCredentialsSection
+                openSkyCredentialsSection
+                aviationStackSection
             }
             #if os(macOS)
             .formStyle(.grouped)
@@ -106,11 +107,10 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - API Credentials
+    // MARK: - OpenSky API Credentials
 
-    @ViewBuilder
-    private var apiCredentialsSection: some View {
-        Section("API Credentials") {
+    private var openSkyCredentialsSection: some View {
+        Section("OpenSky API") {
             TextField("Client ID", text: $settings.customClientId)
                 #if os(iOS)
                 .textInputAutocapitalization(.never)
@@ -133,6 +133,34 @@ struct SettingsView: View {
                 Button("Clear Credentials", role: .destructive) {
                     settings.customClientId = ""
                     settings.customClientSecret = ""
+                }
+            }
+        }
+    }
+
+    // MARK: - AviationStack API
+
+    private var aviationStackSection: some View {
+        Section("AviationStack API") {
+            SecureField("API Key", text: $settings.aviationStackApiKey)
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .autocorrectionDisabled()
+
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Overrides environment variables", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Link("Get API key at aviationstack.com",
+                     destination: URL(string: "https://aviationstack.com/")!)
+                    .font(.caption)
+            }
+            .padding(.top, 2)
+
+            if !settings.aviationStackApiKey.isEmpty {
+                Button("Clear API Key", role: .destructive) {
+                    settings.aviationStackApiKey = ""
                 }
             }
         }
