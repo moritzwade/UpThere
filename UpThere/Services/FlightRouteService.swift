@@ -3,15 +3,15 @@ import os
 
 /// Service for fetching flight route information from AviationStack API
 actor FlightRouteService {
-    private let config: AviationStackConfig
+    private var apiKey: String?
     private let session: URLSession
     
     /// In-memory cache for route info, keyed by ICAO24
     private var cache: [String: FlightRouteInfo] = [:]
     
     /// Initializer for production use
-    nonisolated init(config: AviationStackConfig = .default) {
-        self.config = config
+    init(apiKey: String?) {
+        self.apiKey = apiKey
         
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 15
@@ -21,9 +21,17 @@ actor FlightRouteService {
     }
     
     /// Initializer with custom URLSession (for testing)
-    nonisolated init(config: AviationStackConfig, session: URLSession) {
-        self.config = config
+    init(apiKey: String?, session: URLSession) {
+        self.apiKey = apiKey
         self.session = session
+    }
+    
+    /// Update API key when settings change
+    func updateApiKey(_ newKey: String?) {
+        if apiKey != newKey {
+            apiKey = newKey
+            cache.removeAll()
+        }
     }
     
     /// Fetch route information for a flight
@@ -36,7 +44,7 @@ actor FlightRouteService {
             return cached
         }
         
-        guard config.isConfigured else {
+        guard let apiKey = apiKey, !apiKey.isEmpty else {
             AppLogger.flightService.warning("AviationStack not configured, skipping route lookup")
             return nil
         }
@@ -46,7 +54,7 @@ actor FlightRouteService {
             return nil
         }
         
-        let url = try buildURL(for: callsign)
+        let url = try buildURL(for: callsign, apiKey: apiKey)
         AppLogger.flightService.debug("Fetching route info: \(url.absoluteString, privacy: .public)")
         
         let request = URLRequest(url: url)
@@ -95,12 +103,8 @@ actor FlightRouteService {
     }
     
     /// Build URL with query parameters for AviationStack flights endpoint
-    private func buildURL(for callsign: String) throws -> URL {
-        guard let apiKey = config.apiKey else {
-            throw AviationStackError.unauthorized
-        }
-        
-        var components = URLComponents(string: "\(config.baseURL)/flights")
+    private func buildURL(for callsign: String, apiKey: String) throws -> URL {
+        var components = URLComponents(string: "https://api.aviationstack.com/v1/flights")
         components?.queryItems = [
             URLQueryItem(name: "access_key", value: apiKey),
             URLQueryItem(name: "flight_icao", value: callsign)
