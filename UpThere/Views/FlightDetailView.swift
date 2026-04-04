@@ -4,7 +4,10 @@ import MapKit
 /// Detail view shown when a flight is selected
 struct FlightDetailView: View {
     let flight: Flight
+    @Bindable var viewModel: UpThereViewModel
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var cameraPosition: MapCameraPosition = .automatic
     
     var body: some View {
         NavigationStack {
@@ -27,6 +30,18 @@ struct FlightDetailView: View {
                     }
                     .padding()
                     .background(Color.orange.opacity(0.1))
+                    
+                    // Trail map
+                    if let trail = viewModel.selectedFlightTrail, trail.isValid {
+                        trailMapView(trail: trail)
+                    } else if viewModel.isLoadingTrail {
+                        HStack {
+                            Spacer()
+                            ProgressView("Loading flight trail...")
+                            Spacer()
+                        }
+                        .padding()
+                    }
                     
                     // Info
                     Group {
@@ -111,5 +126,50 @@ struct FlightDetailView: View {
                 }
             }
         }
+    }
+    
+    @ViewBuilder
+    private func trailMapView(trail: FlightTrail) -> some View {
+        Group {
+            Map(position: $cameraPosition) {
+                // Trail polyline
+                MapPolyline(coordinates: trail.coordinates)
+                    .stroke(Color.orange, lineWidth: 3)
+                
+                // Current position marker
+                if let currentCoord = flight.coordinate {
+                    Annotation(flight.formattedCallsign, coordinate: currentCoord) {
+                        Image(systemName: "airplane")
+                            .font(.title2)
+                            .foregroundColor(.orange)
+                            .rotationEffect(.degrees(flight.trueTrack ?? 0))
+                            .padding(8)
+                            .background(Color.orange.opacity(0.3), in: Circle())
+                            .overlay {
+                                Circle()
+                                    .stroke(Color.orange, lineWidth: 3)
+                            }
+                    }
+                }
+                
+                // Trail start marker
+                if let startCoord = trail.positions.first?.coordinate {
+                    Annotation("Start", coordinate: startCoord) {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 10, height: 10)
+                    }
+                }
+            }
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .onAppear {
+                // Set camera to show the full trail
+                if let coordinateRegion = trail.coordinateRegion {
+                    cameraPosition = .region(coordinateRegion)
+                }
+            }
+        }
+        .padding(.horizontal)
     }
 }

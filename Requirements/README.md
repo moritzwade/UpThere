@@ -83,6 +83,7 @@ Scenarios are structured for future automated UI test generation. Each scenario 
 | [SYSREQ-004](core/SYSREQ-004-auto-refresh.md) | Auto-Refresh | medium | implemented |
 | [SYSREQ-005](core/SYSREQ-005-manual-refresh.md) | Manual Refresh | medium | implemented |
 | [SYSREQ-006](core/SYSREQ-006-error-handling.md) | Error Handling | medium | implemented |
+| [SYSREQ-007](core/SYSREQ-007-flight-trails.md) | Flight Trails | medium | implemented |
 
 ### User Interface Requirements (UIREQ-*)
 
@@ -92,6 +93,7 @@ Scenarios are structured for future automated UI test generation. Each scenario 
 | [UIREQ-002](ui/UIREQ-002-flight-map-view.md) | Flight Map View | high | implemented |
 | [UIREQ-003](ui/UIREQ-003-flight-detail-view.md) | Flight Detail View | medium | implemented |
 | [UIREQ-004](ui/UIREQ-004-adaptive-layout.md) | Adaptive Layout | medium | implemented |
+| [UIREQ-005](ui/UIREQ-005-flight-selection.md) | Flight Selection | high | implemented |
 
 ### Non-Functional Requirements (NFREQ-*)
 

@@ -173,15 +173,116 @@ actor FlightService {
         return accessToken
     }
     
+    /// Fetch historical flight states for a specific aircraft.
+    /// Returns an array of (timestamp, longitude, latitude) tuples.
+    /// - Parameters:
+    ///   - icao24: The ICAO24 hex identifier of the aircraft
+    ///   - timeFrom: Start of the time range (Unix timestamp)
+    ///   - timeTo: End of the time range (Unix timestamp)
+    /// - Returns: Array of (date, longitude, latitude) tuples sorted by time
+    func fetchFlightHistory(icao24: String, timeFrom: Int, timeTo: Int) async throws -> [(date: Date, longitude: Double, latitude: Double)] {
+        let url = try buildHistoryURL(icao24: icao24, timeFrom: timeFrom, timeTo: timeTo)
+        AppLogger.flightService.debug("Fetching flight history for \(icao24, privacy: .public) from \(timeFrom, privacy: .public) to \(timeTo, privacy: .public)")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        if config.isConfigured {
+            let token = try await getAccessToken()
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        do {
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                AppLogger.flightService.error("Invalid response type from OpenSky history API")
+                throw OpenSkyError.invalidResponse
+            }
+
+            switch httpResponse.statusCode {
+            case 200:
+                let historyResponse = try OpenSkyHistoryResponse.parse(from: data)
+                let positions = historyResponse.toPositions()
+                AppLogger.flightService.debug("Fetched \(positions.count, privacy: .public) historical positions for \(icao24, privacy: .public)")
+                return positions
+            case 401:
+                AppLogger.flightService.warning("Received 401 from history API, refreshing token and retrying")
+                accessToken = nil
+                tokenExpiresAt = nil
+                if config.isConfigured {
+                    let newToken = try await getAccessToken()
+                    return try await fetchFlightHistoryWithToken(newToken, icao24: icao24, timeFrom: timeFrom, timeTo: timeTo)
+                }
+                throw OpenSkyError.unauthorized
+            case 429:
+                AppLogger.flightService.warning("Rate limited by OpenSky history API (429)")
+                throw OpenSkyError.rateLimited
+            default:
+                if let errorText = String(data: data, encoding: .utf8), !errorText.isEmpty {
+                    AppLogger.flightService.error("OpenSky history API error (\(httpResponse.statusCode, privacy: .public)): \(errorText, privacy: .public)")
+                }
+                throw OpenSkyError.invalidResponse
+            }
+        } catch let error as OpenSkyError {
+            throw error
+        } catch {
+            AppLogger.flightService.error("Network error fetching flight history: \(error.localizedDescription, privacy: .public)")
+            throw OpenSkyError.networkError(error)
+        }
+    }
+
+    /// Fetch flight history with a specific token (retry after 401)
+    private func fetchFlightHistoryWithToken(_ token: String, icao24: String, timeFrom: Int, timeTo: Int) async throws -> [(date: Date, longitude: Double, latitude: Double)] {
+        let url = try buildHistoryURL(icao24: icao24, timeFrom: timeFrom, timeTo: timeTo)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            AppLogger.flightService.error("Invalid response type from OpenSky history API (retry)")
+            throw OpenSkyError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            if let errorText = String(data: data, encoding: .utf8), !errorText.isEmpty {
+                AppLogger.flightService.error("OpenSky history API error after token refresh (\(httpResponse.statusCode, privacy: .public)): \(errorText, privacy: .public)")
+            }
+            throw OpenSkyError.invalidResponse
+        }
+
+        let historyResponse = try OpenSkyHistoryResponse.parse(from: data)
+        let positions = historyResponse.toPositions()
+        AppLogger.flightService.debug("Fetched \(positions.count, privacy: .public) historical positions for \(icao24, privacy: .public) (after token refresh)")
+        return positions
+    }
+
     /// Build URL with query parameters
     private func buildURL(for boundingBox: BoundingBox) throws -> URL {
         var components = URLComponents(string: "\(config.baseURL)/states/all")
         components?.queryItems = boundingBox.queryItems
-        
+
         guard let url = components?.url else {
             throw OpenSkyError.invalidResponse
         }
-        
+
+        return url
+    }
+
+    /// Build URL for the flight history endpoint
+    private func buildHistoryURL(icao24: String, timeFrom: Int, timeTo: Int) throws -> URL {
+        var components = URLComponents(string: "\(config.baseURL)/api/states/all")
+        components?.queryItems = [
+            URLQueryItem(name: "icao24", value: icao24),
+            URLQueryItem(name: "time", value: String(timeFrom)),
+            URLQueryItem(name: "endTime", value: String(timeTo))
+        ]
+
+        guard let url = components?.url else {
+            throw OpenSkyError.invalidResponse
+        }
+
         return url
     }
 }

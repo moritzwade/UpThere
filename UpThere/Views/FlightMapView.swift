@@ -7,7 +7,8 @@ typealias FlightSelectionHandler = (Flight) -> Void
 /// Map view showing flights as annotations
 struct FlightMapView: View {
     @Bindable var viewModel: UpThereViewModel
-    var onFlightSelected: FlightSelectionHandler?
+    var onFlightTapped: FlightSelectionHandler?
+    @Binding var showDetail: Bool
     
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var hasInitialLocationSet = false
@@ -28,17 +29,36 @@ struct FlightMapView: View {
                     }
                 }
                 
+                // Flight trails (polylines) - accumulated 5-minute trails
+                ForEach(Array(viewModel.trails.values)) { trail in
+                    if trail.isValid {
+                        let isSelected = viewModel.selectedFlight?.id == trail.id
+                        MapPolyline(coordinates: trail.coordinates)
+                            .stroke(isSelected ? Color.orange : Color.orange.opacity(0.35), lineWidth: isSelected ? 2.5 : 1.5)
+                    }
+                }
+                
+                // Selected flight complete trail (from API)
+                if let selectedTrail = viewModel.selectedFlightTrail, selectedTrail.isValid {
+                    MapPolyline(coordinates: selectedTrail.coordinates)
+                        .stroke(Color.orange, lineWidth: 3)
+                }
+                
                 // Flight markers
                 ForEach(viewModel.flights) { flight in
                     if let coordinate = flight.coordinate {
                         Annotation(flight.formattedCallsign, coordinate: coordinate) {
                             FlightAnnotationView(flight: flight, isSelected: viewModel.selectedFlight?.id == flight.id)
                                 .onTapGesture {
-                                    onFlightSelected?(flight)
+                                    onFlightTapped?(flight)
                                 }
                         }
                     }
                 }
+            }
+            .onTapGesture {
+                // Tap on empty map area → deselect
+                viewModel.selectFlight(nil)
             }
             .mapControls {
                 MapUserLocationButton()
@@ -56,8 +76,13 @@ struct FlightMapView: View {
             VStack {
                 HStack {
                     Spacer()
-                    refreshButton
-                        .offset(x: 20, y: 40)
+                    VStack(spacing: 12) {
+                        // Details button - shown when a flight is selected
+                        if viewModel.selectedFlight != nil {
+                            detailsButton
+                        }
+                        refreshButton
+                    }
                 }
                 Spacer()
                 if let error = viewModel.errorMessage {
@@ -80,6 +105,17 @@ struct FlightMapView: View {
                 ))
                 hasInitialLocationSet = true
             }
+        }
+    }
+    
+    private var detailsButton: some View {
+        Button {
+            showDetail = true
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.title2)
+                .padding(10)
+                .background(.regularMaterial, in: Circle())
         }
     }
     

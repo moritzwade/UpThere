@@ -202,4 +202,81 @@ struct FlightServiceTests {
             #expect(isNetworkError, "Expected network error")
         }
     }
+    
+    // MARK: - Historical Flight Data Tests
+    
+    @Test
+    func testFetchFlightHistorySuccess() async throws {
+        let session = createMockSession { request in
+            if request.url?.path.contains("auth") == true {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                let tokenResponse = """
+                {"access_token": "mock_token", "expires_in": 1800}
+                """.data(using: .utf8)!
+                return (response, tokenResponse)
+            } else {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                return (response, TestData.validHistoryResponse)
+            }
+        }
+        
+        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
+        let service = FlightService(config: config, session: session)
+        
+        let positions = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)
+        
+        #expect(positions.count == 3)
+        #expect(positions[0].latitude == 37.7000)
+        #expect(positions[0].longitude == -122.5000)
+        #expect(positions[2].latitude == 37.7749)
+    }
+    
+    @Test
+    func testFetchFlightHistoryEmpty() async throws {
+        let session = createMockSession { request in
+            if request.url?.path.contains("auth") == true {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                let tokenResponse = """
+                {"access_token": "mock_token", "expires_in": 1800}
+                """.data(using: .utf8)!
+                return (response, tokenResponse)
+            } else {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                return (response, TestData.emptyHistoryResponse)
+            }
+        }
+        
+        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
+        let service = FlightService(config: config, session: session)
+        
+        let positions = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)
+        
+        #expect(positions.isEmpty)
+    }
+    
+    @Test
+    func testFetchFlightHistoryRateLimit() async throws {
+        let session = createMockSession { request in
+            if request.url?.path.contains("auth") == true {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+                let tokenResponse = """
+                {"access_token": "mock_token", "expires_in": 1800}
+                """.data(using: .utf8)!
+                return (response, tokenResponse)
+            } else {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 429, httpVersion: nil, headerFields: nil)!
+                return (response, "Too Many Requests".data(using: .utf8)!)
+            }
+        }
+        
+        let config = OpenSkyConfig(clientId: "test", clientSecret: "test")
+        let service = FlightService(config: config, session: session)
+        
+        do {
+            _ = try await service.fetchFlightHistory(icao24: "3c6444", timeFrom: 1704063600, timeTo: 1704067200)
+            #expect(Bool(false), "Should have thrown rate limit error")
+        } catch {
+            #expect(error is OpenSkyError)
+        }
+    }
 }

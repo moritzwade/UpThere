@@ -14,6 +14,15 @@ class UpThereViewModel {
     var errorMessage: String?
     var lastUpdateTime: Date?
     
+    /// Flight trails keyed by ICAO24
+    var trails: [String: FlightTrail] = [:]
+    
+    /// Complete historical trail for the selected flight (fetched from API)
+    var selectedFlightTrail: FlightTrail?
+    
+    /// Whether we're currently fetching historical data for the selected flight
+    var isLoadingTrail = false
+    
     // MARK: - Services
     private let flightService: FlightService
     private let locationService: LocationService
@@ -66,6 +75,8 @@ class UpThereViewModel {
         AppLogger.viewModel.info("Stopping flight tracking")
         stopAutoRefresh()
         locationService.stopUpdating()
+        trails.removeAll()
+        selectedFlightTrail = nil
     }
     
     /// Manual refresh
@@ -88,9 +99,15 @@ class UpThereViewModel {
             )
             AppLogger.viewModel.debug("Fetching flights in bounding box")
             
-            self.flights = try await flightService.fetchFlights(in: boundingBox)
-            lastUpdateTime = Date()
-            AppLogger.viewModel.debug("Refresh complete: \(self.flights.count, privacy: .public) flights")
+            let newFlights = try await flightService.fetchFlights(in: boundingBox)
+            let fetchTime = Date()
+            
+            // Update trails: add new positions for flights we just received
+            updateTrails(with: newFlights, at: fetchTime)
+            
+            self.flights = newFlights
+            lastUpdateTime = fetchTime
+            AppLogger.viewModel.debug("Refresh complete: \(self.flights.count, privacy: .public) flights, \(self.trails.count, privacy: .public) trails")
         } catch {
             errorMessage = error.localizedDescription
             AppLogger.viewModel.error("Refresh failed: \(error.localizedDescription, privacy: .public)")
@@ -99,9 +116,101 @@ class UpThereViewModel {
         isLoading = false
     }
     
-    /// Select a flight to show details
+    /// Update trails with new flight positions
+    private func updateTrails(with flights: [Flight], at date: Date) {
+        // Track which ICAO24s are still active
+        let activeIcao24s = Set(flights.map(\.id))
+        
+        for flight in flights {
+            guard let coordinate = flight.coordinate else { continue }
+            
+            if var trail = trails[flight.id] {
+                // Append new position to existing trail
+                trail.append(date: date, coordinate: coordinate)
+                trails[flight.id] = trail
+            } else {
+                // Create new trail
+                var trail = FlightTrail(icao24: flight.id)
+                trail.append(date: date, coordinate: coordinate)
+                trails[flight.id] = trail
+            }
+        }
+        
+        // Remove trails for flights that are no longer active AND older than max trail age
+        let cutoff = date.addingTimeInterval(-FlightTrail.maxTrailAge)
+        trails = trails.filter { icao24, trail in
+            if activeIcao24s.contains(icao24) { return true }
+            return trail.positions.contains { $0.date >= cutoff }
+        }
+    }
+    
+    /// Fetch complete historical trail for the selected flight
+    func fetchSelectedFlightTrail() async {
+        guard let flight = selectedFlight else {
+            selectedFlightTrail = nil
+            return
+        }
+        
+        isLoadingTrail = true
+        AppLogger.viewModel.debug("Fetching complete trail for \(flight.id, privacy: .public)")
+        
+        do {
+            // Fetch last 24 hours of history (OpenSky free tier limit)
+            let timeTo = Int(Date().timeIntervalSince1970)
+            let timeFrom = timeTo - (24 * 3600) // 24 hours ago
+            
+            let positions = try await flightService.fetchFlightHistory(
+                icao24: flight.id,
+                timeFrom: timeFrom,
+                timeTo: timeTo
+            )
+            
+            let trailPositions = positions.compactMap { pos -> (date: Date, coordinate: CLLocationCoordinate2D)? in
+                guard pos.latitude >= -90 && pos.latitude <= 90,
+                      pos.longitude >= -180 && pos.longitude <= 180 else {
+                    return nil
+                }
+                return (
+                    date: pos.date,
+                    coordinate: CLLocationCoordinate2D(latitude: pos.latitude, longitude: pos.longitude)
+                )
+            }
+            
+            var trail = FlightTrail(icao24: flight.id)
+            trail.setCompleteHistory(positions: trailPositions)
+            selectedFlightTrail = trail
+            
+            AppLogger.viewModel.debug("Fetched \(trailPositions.count, privacy: .public) positions for selected flight trail")
+        } catch {
+            AppLogger.viewModel.error("Failed to fetch flight trail: \(error.localizedDescription, privacy: .public)")
+            // Fall back to accumulated trail
+            if let accumulatedTrail = trails[flight.id] {
+                selectedFlightTrail = accumulatedTrail
+            }
+        }
+        
+        isLoadingTrail = false
+    }
+    
+    /// Select a flight to show details (toggle: tap same flight to deselect)
     func selectFlight(_ flight: Flight?) {
-        selectedFlight = flight
+        if let flight = flight, flight.id == selectedFlight?.id {
+            // Tapping the same flight → deselect
+            selectedFlight = nil
+            selectedFlightTrail = nil
+            AppLogger.viewModel.debug("Deselected flight \(flight.id, privacy: .public)")
+        } else if let flight = flight {
+            // Selecting a new flight
+            selectedFlight = flight
+            Task {
+                await fetchSelectedFlightTrail()
+            }
+            AppLogger.viewModel.debug("Selected flight \(flight.id, privacy: .public)")
+        } else {
+            // Deselecting (e.g., tapping empty space)
+            selectedFlight = nil
+            selectedFlightTrail = nil
+        }
     }
     
     /// Request location permission

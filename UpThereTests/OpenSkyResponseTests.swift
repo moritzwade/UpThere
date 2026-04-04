@@ -133,4 +133,60 @@ struct OpenSkyResponseTests {
         #expect(flights[0].longitude == nil)
         #expect(flights[0].baroAltitude == nil)
     }
+    
+    // MARK: - OpenSkyHistoryResponse Tests
+    
+    @Test
+    func testHistoryParseValidResponse() throws {
+        let response = try OpenSkyHistoryResponse.parse(from: TestData.validHistoryResponse)
+        
+        #expect(response.time == 1704067200)
+        #expect(response.states?.count == 3)
+    }
+    
+    @Test
+    func testHistoryParseEmptyResponse() throws {
+        let response = try OpenSkyHistoryResponse.parse(from: TestData.emptyHistoryResponse)
+        
+        #expect(response.time == 1704067200)
+        #expect(response.states?.isEmpty == true)
+    }
+    
+    @Test
+    func testHistoryToPositions() throws {
+        let response = try OpenSkyHistoryResponse.parse(from: TestData.validHistoryResponse)
+        let positions = response.toPositions()
+        
+        #expect(positions.count == 3)
+        // First position
+        #expect(positions[0].latitude == 37.7000)
+        #expect(positions[0].longitude == -122.5000)
+        #expect(positions[0].date == Date(timeIntervalSince1970: 1704063600))
+        // Last position
+        #expect(positions[2].latitude == 37.7749)
+        #expect(positions[2].longitude == -122.4194)
+    }
+    
+    @Test
+    func testHistoryToPositionsEmptyStates() throws {
+        let response = try OpenSkyHistoryResponse.parse(from: TestData.emptyHistoryResponse)
+        let positions = response.toPositions()
+        
+        #expect(positions.isEmpty)
+    }
+    
+    @Test
+    func testHistoryToPositionsNullStates() throws {
+        let data = """
+        {
+            "time": 1704067200,
+            "states": null
+        }
+        """.data(using: .utf8)!
+        
+        let response = try OpenSkyHistoryResponse.parse(from: data)
+        let positions = response.toPositions()
+        
+        #expect(positions.isEmpty)
+    }
 }

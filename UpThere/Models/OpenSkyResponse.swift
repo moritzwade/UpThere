@@ -1,6 +1,6 @@
 import Foundation
 
-/// Response from OpenSky Network states/all endpoint
+/// Response from OpenSky Network states/all endpoint (also used for historical queries)
 /// Note: We parse this manually since the states array contains mixed types
 struct OpenSkyResponse {
     /// Unix timestamp of the request
@@ -61,6 +61,64 @@ enum OpenSkyError: Error, LocalizedError {
         case .rateLimited:
             return "OpenSky rate limit exceeded"
         }
+    }
+}
+
+/// Response from OpenSky Network historical states endpoint
+/// The response has the same shape as the live states endpoint: { time: Int, states: [[Any]] }
+struct OpenSkyHistoryResponse {
+    /// Unix timestamp of the request
+    let time: Int
+    
+    /// Raw states array from JSON
+    let states: [[Any]]?
+    
+    /// Convert to array of (date, longitude, latitude) tuples
+    func toPositions() -> [(date: Date, longitude: Double, latitude: Double)] {
+        guard let states = states else { return [] }
+        
+        return states.compactMap { state -> (date: Date, longitude: Double, latitude: Double)? in
+            guard state.count >= 7,
+                  let lon = state[5] as? Double,
+                  let lat = state[6] as? Double else {
+                return nil
+            }
+            
+            // time_position is at index 3
+            if let timePosition = state[3] as? Int {
+                return (
+                    date: Date(timeIntervalSince1970: TimeInterval(timePosition)),
+                    longitude: lon,
+                    latitude: lat
+                )
+            }
+            
+            // Fall back to last_contact at index 4
+            if let lastContact = state[4] as? Int {
+                return (
+                    date: Date(timeIntervalSince1970: TimeInterval(lastContact)),
+                    longitude: lon,
+                    latitude: lat
+                )
+            }
+            
+            return nil
+        }
+    }
+    
+    /// Parse from JSON data
+    static func parse(from data: Data) throws -> OpenSkyHistoryResponse {
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let time = json["time"] as? Int else {
+            throw OpenSkyError.invalidResponse
+        }
+        
+        var states: [[Any]]? = nil
+        if let rawStates = json["states"] as? [[Any]] {
+            states = rawStates
+        }
+        
+        return OpenSkyHistoryResponse(time: time, states: states)
     }
 }
 
