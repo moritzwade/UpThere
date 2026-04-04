@@ -11,6 +11,7 @@ struct SettingsView: View {
                 searchRadiusSection
                 refreshIntervalSection
                 mapStyleSection
+                unitsSection
                 apiCredentialsSection
             }
             #if os(macOS)
@@ -85,6 +86,23 @@ struct SettingsView: View {
                 }
             }
             .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - Unit Preferences
+
+    private var unitsSection: some View {
+        Section("Units") {
+            Picker("Altitude", selection: $settings.altitudeUnit) {
+                ForEach(AltitudeUnit.allCases) { unit in
+                    Text(unit.displayName).tag(unit)
+                }
+            }
+            Picker("Speed", selection: $settings.speedUnit) {
+                ForEach(SpeedUnit.allCases) { unit in
+                    Text(unit.displayName).tag(unit)
+                }
+            }
         }
     }
 

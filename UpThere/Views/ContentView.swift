@@ -66,7 +66,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showDetail) {
             if let flight = viewModel.selectedFlight {
-                FlightDetailView(flight: flight, viewModel: viewModel)
+                FlightDetailView(flight: flight, viewModel: viewModel, settings: settings)
             }
         }
         .sheet(isPresented: $isShowingSettings) {

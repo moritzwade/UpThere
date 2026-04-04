@@ -57,6 +57,12 @@ struct Flight: Identifiable, Hashable {
         return speed * 1.94384
     }
     
+    /// Speed in km/h (converted from m/s)
+    var speedKmh: Double? {
+        guard let speed = velocity else { return nil }
+        return speed * 3.6
+    }
+    
     /// Vertical rate in feet per minute (converted from m/s)
     var verticalRateFPM: Double? {
         guard let rate = verticalRate else { return nil }
