@@ -204,3 +204,4 @@ log stream --predicate 'subsystem == "com.moritzwade.upthere" && category == "Fl
    ```
 4. **Commit**: use gitmoji format (see Git Commit Conventions above)
 5. **PR**: create a pull request with a clear summary of changes
+   - **Always include `Closes #<issue id>`** in the PR body to auto-close the linked issue on merge
