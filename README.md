@@ -56,6 +56,10 @@ open build/Debug/UpThere.app
 
 ## Requirements
 
+System, platform, and runtime requirements are documented in [`Requirements/`](Requirements/README.md) as Markdown files with structured YAML frontmatter. Each requirement includes Given/When/Then test scenarios for future automated test generation.
+
+## Runtime Requirements
+
 - macOS 14.0+ or iOS 17.0+
 - Location services enabled
 - OpenSky Network account (free, optional)
