@@ -242,21 +242,33 @@ git worktree list | grep "issue/<num>"
 git worktree add ../UpThere-worktrees/issue-<num>-<slug> -b issue/<num>/<slug> master
 ```
 
-**3. Work in the worktree:**
+**3. Initialize the worktree:**
 ```bash
 cd ../UpThere-worktrees/issue-<num>-<slug>
+xcodegen generate
+```
+> **Important:** The `UpThere.xcodeproj` is **not committed** to git (it's generated from `project.yml` by XcodeGen). Every new worktree must run `xcodegen generate` before building or opening in Xcode.
+
+**4. Work in the worktree:**
+```bash
 # implement, build, test
 ```
 
-**4. Commit and push:**
+**5. Commit and push:**
 ```bash
 git add -A && git commit -m "<gitmoji> <message>"
 git push -u origin issue/<num>/<slug>
 ```
 
-**5. Create PR** with `Closes #<num>` in the body.
+**5. Commit and push:**
+```bash
+git add -A && git commit -m "<gitmoji> <message>"
+git push -u origin issue/<num>/<slug>
+```
 
-**6. After merge, wait for user confirmation** that the implementation is complete, then clean up:
+**6. Create PR** with `Closes #<num>` in the body.
+
+**7. After merge, wait for user confirmation** that the implementation is complete, then clean up:
 ```bash
 git worktree remove ../UpThere-worktrees/issue-<num>-<slug>
 git branch -d issue/<num>/<slug>
