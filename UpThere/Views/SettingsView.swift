@@ -137,30 +137,6 @@ struct SettingsView: View {
                 }
             }
         }
-
-        Section("AviationStack API") {
-            SecureField("API Key", text: $settings.aviationStackApiKey)
-                #if os(iOS)
-                .textInputAutocapitalization(.never)
-                #endif
-                .autocorrectionDisabled()
-
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Overrides environment variables", systemImage: "info.circle")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Link("Get API key at aviationstack.com",
-                     destination: URL(string: "https://aviationstack.com/")!)
-                    .font(.caption)
-            }
-            .padding(.top, 2)
-
-            if !settings.aviationStackApiKey.isEmpty {
-                Button("Clear API Key", role: .destructive) {
-                    settings.aviationStackApiKey = ""
-                }
-            }
-        }
     }
 
     // MARK: - AviationStack API
