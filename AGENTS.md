@@ -299,6 +299,7 @@ git push origin --delete issue/<num>/<slug>
 ### Rules for Agents
 
 - **NEVER edit files in the main `UpThere/` checkout** — always create/use a worktree
+- **NEVER push to `master`** — all changes must go through PRs via feature branches. Push only to `issue/<num>/<slug>` branches. The user decides when to merge.
 - **Always check `git worktree list` first** — reuse existing worktrees for the same issue
 - **One worktree per issue** — never create duplicates
 - **Always branch from `master`** — never from another feature branch
