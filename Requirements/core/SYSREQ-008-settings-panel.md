@@ -4,7 +4,7 @@ title: Settings Panel
 priority: high
 type: feature
 status: implemented
-tags: [settings, persistence, configuration, user-preferences, units]
+tags: [settings, persistence, configuration, user-preferences, units, aviationstack]
 scenarios:
   - id: SC-SYSREQ-008-01
     name: Open settings panel
@@ -61,6 +61,16 @@ scenarios:
     given: The settings panel is open
     when: User taps the "Done" button
     then: The settings sheet is dismissed
+  - id: SC-SYSREQ-008-12
+    name: Configure AviationStack API key
+    given: The settings panel is open
+    when: User enters an AviationStack API key
+    then: The key is persisted and used for route lookups, overriding the environment variable
+  - id: SC-SYSREQ-008-13
+    name: Clear AviationStack API key
+    given: An AviationStack API key is configured
+    when: User taps "Clear API Key"
+    then: The key is cleared and route lookups fall back to the environment variable
 ---
 
 # SYSREQ-008: Settings Panel
@@ -83,7 +93,7 @@ The application provides a settings panel that allows users to configure search 
 1. Settings are accessible via a gear icon button in the toolbar
 2. Settings are presented as a sheet with a `NavigationStack` and `Form` layout
 3. A "Done" button in the toolbar dismisses the settings sheet
-4. Six configuration sections are available: Search Radius, Auto-Refresh, Map Style, Units, API Credentials
+4. Seven configuration sections are available: Search Radius, Auto-Refresh, Map Style, Units, OpenSky API, AviationStack API
 5. All settings are persisted to `UserDefaults` with keys prefixed `upthere.`
 6. Settings changes take effect reactively without requiring an app restart
 7. The `AppSettings` class is `@Observable` and `@MainActor`
@@ -146,6 +156,8 @@ The `Flight` model stores speed in m/s (`velocity`) and provides `speedKnots` an
 
 ## API Credentials
 
+### OpenSky API
+
 | Field | UI Element | Notes |
 |-------|-----------|-------|
 | Client ID | `TextField` | Autocapitalization disabled (iOS), autocorrection disabled |
@@ -155,7 +167,21 @@ The `Flight` model stores speed in m/s (`velocity`) and provides `speedKnots` an
 - Info text explains that custom credentials override environment variables
 - Link to opensky-network.org for obtaining credentials
 
+### AviationStack API
+
+| Field | UI Element | Notes |
+|-------|-----------|-------|
+| API Key | `SecureField` | Masked input, autocapitalization disabled (iOS) |
+
+- A "Clear API Key" destructive button appears when a key is set
+- Info text explains that the key overrides the `AVIATIONSTACK_API_KEY` environment variable
+- Link to aviationstack.com for obtaining an API key
+- The key is used by `FlightRouteService` to fetch route information (airline, departure/arrival airports, terminals, gates, flight status)
+- When the key changes in settings, the `FlightRouteService` cache is cleared and the new key is used for subsequent lookups
+
 ## Credential Resolution Priority
+
+### OpenSky (OAuth2)
 
 ```
 1. Custom settings (Client ID + Client Secret from UserDefaults)
@@ -172,11 +198,22 @@ Using API credentials from: environment variables
 Using API credentials from: none — unauthenticated
 ```
 
+### AviationStack (API Key)
+
+```
+1. Custom settings (API Key from UserDefaults)
+   ↓ if not configured
+2. Environment variable (AVIATIONSTACK_API_KEY)
+   ↓ if not configured
+3. None — route lookups disabled
+```
+
 ## Settings Observation
 
 The `UpThereViewModel` polls settings every 500ms via `observeSettingsChanges()` to detect:
 - **Refresh option changes** → restarts the auto-refresh task with the new interval
-- **Credential changes** → calls `flightService.updateCredentials()` with resolved credentials, clearing the cached token if the source changed
+- **OpenSky credential changes** → calls `flightService.updateCredentials()` with resolved credentials, clearing the cached token if the source changed
+- **AviationStack API key changes** → calls `routeService.updateApiKey()` with the new key, clearing the route cache
 
 ## Persistence Keys
 
@@ -190,6 +227,7 @@ The `UpThereViewModel` polls settings every 500ms via `observeSettingsChanges()`
 | `upthere.speedUnit` | String | "kmh" |
 | `upthere.customClientId` | String | "" |
 | `upthere.customClientSecret` | String | "" |
+| `upthere.aviationStackApiKey` | String | "" |
 
 ## Settings View Layout
 
@@ -210,11 +248,16 @@ The `UpThereViewModel` polls settings every 500ms via `observeSettingsChanges()`
 │ Altitude: [Meters (m)       ▼]  │
 │ Speed:    [km/h             ▼]  │
 ├─────────────────────────────────┤
-│ API Credentials                 │
+│ OpenSky API                     │
 │ Client ID: [____________]       │
 │ Client Secret: [____________]   │
 │ ⓘ Overrides environment vars    │
 │ Get credentials at opensky-...  │
+├─────────────────────────────────┤
+│ AviationStack API               │
+│ API Key: [____________]         │
+│ ⓘ Overrides environment vars    │
+│ Get API key at aviationstac...  │
 └─────────────────────────────────┘
 ```
 
