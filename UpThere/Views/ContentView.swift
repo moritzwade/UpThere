@@ -21,6 +21,7 @@ struct ContentView: View {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     FlightListView(
                         viewModel: viewModel,
+                        settings: settings,
                         onFlightTapped: { viewModel.selectFlight($0) },
                         showDetail: $showDetail,
                         isSidebarVisible: columnVisibility != .detailOnly
@@ -49,6 +50,7 @@ struct ContentView: View {
                     
                     FlightListView(
                         viewModel: viewModel,
+                        settings: settings,
                         onFlightTapped: { viewModel.selectFlight($0) },
                         showDetail: $showDetail
                     )

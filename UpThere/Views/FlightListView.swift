@@ -4,6 +4,7 @@ import CoreLocation
 /// List view showing all flights
 struct FlightListView: View {
     @Bindable var viewModel: UpThereViewModel
+    @Bindable var settings: AppSettings
     var onFlightTapped: FlightSelectionHandler?
     @Binding var showDetail: Bool
     @State private var sortOrder = SortOrder.distance
@@ -37,6 +38,7 @@ struct FlightListView: View {
             FlightRowView(
                 flight: flight,
                 userLocation: viewModel.userLocation,
+                settings: settings,
                 isSelected: viewModel.selectedFlight?.id == flight.id,
                 onTapped: { onFlightTapped?(flight) },
                 showDetail: $showDetail
@@ -104,6 +106,7 @@ struct FlightListView: View {
 struct FlightRowView: View {
     let flight: Flight
     let userLocation: CLLocation?
+    @Bindable var settings: AppSettings
     let isSelected: Bool
     let onTapped: () -> Void
     @Binding var showDetail: Bool
@@ -135,14 +138,14 @@ struct FlightRowView: View {
                     .fontWeight(.bold)
                 
                 HStack(spacing: 8) {
-                    if let altitude = flight.altitudeFeet {
-                        Label("\(Int(altitude).formatted()) ft", systemImage: "arrow.up.and.down")
+                    if let altitude = settings.altitudeUnit == .meters ? flight.baroAltitude : flight.altitudeFeet {
+                        Label("\(Int(altitude).formatted()) \(settings.altitudeUnit.symbol)", systemImage: "arrow.up.and.down")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     
-                    if let speed = flight.speedKnots {
-                        Label("\(Int(speed)) kts", systemImage: "speedometer")
+                    if let speed = settings.speedUnit == .kmh ? flight.speedKmh : flight.speedKnots {
+                        Label("\(Int(speed)) \(settings.speedUnit.symbol)", systemImage: "speedometer")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
