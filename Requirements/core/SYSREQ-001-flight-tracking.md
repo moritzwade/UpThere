@@ -1,5 +1,5 @@
 ---
-id: REQ-001
+id: SYSREQ-001
 title: Real-Time Flight Tracking
 priority: high
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: Invalid states are silently skipped and valid states are converted to Flight objects
 ---
 
-# REQ-001: Real-Time Flight Tracking
+# SYSREQ-001: Real-Time Flight Tracking
 
 ## Description
 

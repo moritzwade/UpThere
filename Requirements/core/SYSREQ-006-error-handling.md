@@ -1,5 +1,5 @@
 ---
-id: REQ-006
+id: SYSREQ-006
 title: Error Handling
 priority: medium
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: The error message is cleared and the banner is hidden
 ---
 
-# REQ-006: Error Handling
+# SYSREQ-006: Error Handling
 
 ## Description
 

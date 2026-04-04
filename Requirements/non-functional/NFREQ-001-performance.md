@@ -1,5 +1,5 @@
 ---
-id: REQ-020
+id: NFREQ-001
 title: Performance
 priority: medium
 type: non-functional
@@ -28,7 +28,7 @@ scenarios:
     then: Only flights within the configured search radius are requested from the API
 ---
 
-# REQ-020: Performance
+# NFREQ-001: Performance
 
 ## Description
 

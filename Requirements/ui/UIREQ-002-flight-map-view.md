@@ -1,5 +1,5 @@
 ---
-id: REQ-011
+id: UIREQ-002
 title: Flight Map View
 priority: high
 type: feature
@@ -43,7 +43,7 @@ scenarios:
     then: An orange error banner appears at the bottom of the map
 ---
 
-# REQ-011: Flight Map View
+# UIREQ-002: Flight Map View
 
 ## Description
 

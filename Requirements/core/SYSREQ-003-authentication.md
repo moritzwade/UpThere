@@ -1,5 +1,5 @@
 ---
-id: REQ-003
+id: SYSREQ-003
 title: OAuth2 Authentication
 priority: high
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: An unauthorized error is thrown
 ---
 
-# REQ-003: OAuth2 Authentication
+# SYSREQ-003: OAuth2 Authentication
 
 ## Description
 

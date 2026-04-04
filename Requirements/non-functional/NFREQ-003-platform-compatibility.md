@@ -1,5 +1,5 @@
 ---
-id: REQ-022
+id: NFREQ-003
 title: Platform Compatibility
 priority: medium
 type: non-functional
@@ -33,7 +33,7 @@ scenarios:
     then: The file is excluded from the macOS build
 ---
 
-# REQ-022: Platform Compatibility
+# NFREQ-003: Platform Compatibility
 
 ## Description
 

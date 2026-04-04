@@ -1,5 +1,5 @@
 ---
-id: REQ-004
+id: SYSREQ-004
 title: Auto-Refresh
 priority: medium
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: The new refresh is skipped until the current fetch completes
 ---
 
-# REQ-004: Auto-Refresh
+# SYSREQ-004: Auto-Refresh
 
 ## Description
 

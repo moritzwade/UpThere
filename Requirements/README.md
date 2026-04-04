@@ -6,24 +6,24 @@ This directory contains the requirements for the UpThere flight tracking applica
 
 ```
 Requirements/
-├── README.md                 ← This file
-├── core/                     ← Core functionality requirements
-│   ├── REQ-001-flight-tracking.md
-│   ├── REQ-002-location-services.md
-│   ├── REQ-003-authentication.md
-│   ├── REQ-004-auto-refresh.md
-│   ├── REQ-005-manual-refresh.md
-│   └── REQ-006-error-handling.md
-├── ui/                       ← User interface requirements
-│   ├── REQ-010-flight-list-view.md
-│   ├── REQ-011-flight-map-view.md
-│   ├── REQ-012-flight-detail-view.md
-│   └── REQ-013-adaptive-layout.md
-└── non-functional/           ← Non-functional requirements
-    ├── REQ-020-performance.md
-    ├── REQ-021-logging.md
-    ├── REQ-022-platform-compatibility.md
-    └── REQ-023-test-coverage.md
+├── README.md                       ← This file
+├── core/                           ← System requirements (SYSREQ-*)
+│   ├── SYSREQ-001-flight-tracking.md
+│   ├── SYSREQ-002-location-services.md
+│   ├── SYSREQ-003-authentication.md
+│   ├── SYSREQ-004-auto-refresh.md
+│   ├── SYSREQ-005-manual-refresh.md
+│   └── SYSREQ-006-error-handling.md
+├── ui/                             ← User interface requirements (UIREQ-*)
+│   ├── UIREQ-001-flight-list-view.md
+│   ├── UIREQ-002-flight-map-view.md
+│   ├── UIREQ-003-flight-detail-view.md
+│   └── UIREQ-004-adaptive-layout.md
+└── non-functional/                 ← Non-functional requirements (NFREQ-*)
+    ├── NFREQ-001-performance.md
+    ├── NFREQ-002-logging.md
+    ├── NFREQ-003-platform-compatibility.md
+    └── NFREQ-004-test-coverage.md
 ```
 
 ## Requirement File Format
@@ -32,14 +32,14 @@ Each requirement file uses Markdown with YAML frontmatter:
 
 ```yaml
 ---
-id: REQ-XXX
+id: SYSREQ-001
 title: Short descriptive title
 priority: high | medium | low
 type: feature | non-functional | constraint
 status: implemented | proposed | deprecated
 tags: [tag1, tag2]
 scenarios:
-  - id: SC-XXX-01
+  - id: SC-SYSREQ-001-01
     name: Short scenario name
     given: Precondition
     when: Action
@@ -51,7 +51,7 @@ scenarios:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `id` | Yes | Unique identifier in format `REQ-NNN` |
+| `id` | Yes | Unique identifier with type prefix: `SYSREQ-NNN`, `UIREQ-NNN`, or `NFREQ-NNN` |
 | `title` | Yes | Short descriptive title |
 | `priority` | Yes | `high`, `medium`, or `low` |
 | `type` | Yes | `feature`, `non-functional`, or `constraint` |
@@ -65,7 +65,7 @@ Scenarios are structured for future automated UI test generation. Each scenario 
 
 | Field | Description |
 |-------|-------------|
-| `id` | Unique identifier in format `SC-NNN-NN` |
+| `id` | Unique identifier in format `SC-{REQID}-{NN}` (e.g., `SC-SYSREQ-001-01`) |
 | `name` | Short human-readable name |
 | `given` | Precondition(s) that must be true |
 | `when` | User or system action |
@@ -73,52 +73,58 @@ Scenarios are structured for future automated UI test generation. Each scenario 
 
 ## Requirements Index
 
-### Core (REQ-001 to REQ-009)
+### System Requirements (SYSREQ-*)
 
 | ID | Title | Priority | Status |
 |----|-------|----------|--------|
-| [REQ-001](core/REQ-001-flight-tracking.md) | Real-Time Flight Tracking | high | implemented |
-| [REQ-002](core/REQ-002-location-services.md) | Location Services | high | implemented |
-| [REQ-003](core/REQ-003-authentication.md) | OAuth2 Authentication | high | implemented |
-| [REQ-004](core/REQ-004-auto-refresh.md) | Auto-Refresh | medium | implemented |
-| [REQ-005](core/REQ-005-manual-refresh.md) | Manual Refresh | medium | implemented |
-| [REQ-006](core/REQ-006-error-handling.md) | Error Handling | medium | implemented |
+| [SYSREQ-001](core/SYSREQ-001-flight-tracking.md) | Real-Time Flight Tracking | high | implemented |
+| [SYSREQ-002](core/SYSREQ-002-location-services.md) | Location Services | high | implemented |
+| [SYSREQ-003](core/SYSREQ-003-authentication.md) | OAuth2 Authentication | high | implemented |
+| [SYSREQ-004](core/SYSREQ-004-auto-refresh.md) | Auto-Refresh | medium | implemented |
+| [SYSREQ-005](core/SYSREQ-005-manual-refresh.md) | Manual Refresh | medium | implemented |
+| [SYSREQ-006](core/SYSREQ-006-error-handling.md) | Error Handling | medium | implemented |
 
-### UI (REQ-010 to REQ-019)
-
-| ID | Title | Priority | Status |
-|----|-------|----------|--------|
-| [REQ-010](ui/REQ-010-flight-list-view.md) | Flight List View | high | implemented |
-| [REQ-011](ui/REQ-011-flight-map-view.md) | Flight Map View | high | implemented |
-| [REQ-012](ui/REQ-012-flight-detail-view.md) | Flight Detail View | medium | implemented |
-| [REQ-013](ui/REQ-013-adaptive-layout.md) | Adaptive Layout | medium | implemented |
-
-### Non-Functional (REQ-020 to REQ-029)
+### User Interface Requirements (UIREQ-*)
 
 | ID | Title | Priority | Status |
 |----|-------|----------|--------|
-| [REQ-020](non-functional/REQ-020-performance.md) | Performance | medium | implemented |
-| [REQ-021](non-functional/REQ-021-logging.md) | Logging | medium | implemented |
-| [REQ-022](non-functional/REQ-022-platform-compatibility.md) | Platform Compatibility | medium | implemented |
-| [REQ-023](non-functional/REQ-023-test-coverage.md) | Test Coverage | medium | implemented |
+| [UIREQ-001](ui/UIREQ-001-flight-list-view.md) | Flight List View | high | implemented |
+| [UIREQ-002](ui/UIREQ-002-flight-map-view.md) | Flight Map View | high | implemented |
+| [UIREQ-003](ui/UIREQ-003-flight-detail-view.md) | Flight Detail View | medium | implemented |
+| [UIREQ-004](ui/UIREQ-004-adaptive-layout.md) | Adaptive Layout | medium | implemented |
+
+### Non-Functional Requirements (NFREQ-*)
+
+| ID | Title | Priority | Status |
+|----|-------|----------|--------|
+| [NFREQ-001](non-functional/NFREQ-001-performance.md) | Performance | medium | implemented |
+| [NFREQ-002](non-functional/NFREQ-002-logging.md) | Logging | medium | implemented |
+| [NFREQ-003](non-functional/NFREQ-003-platform-compatibility.md) | Platform Compatibility | medium | implemented |
+| [NFREQ-004](non-functional/NFREQ-004-test-coverage.md) | Test Coverage | medium | implemented |
 
 ## Conventions
 
-### ID Numbering
+### ID Prefixes
 
-- `REQ-001` to `REQ-009`: Core functionality
-- `REQ-010` to `REQ-019`: User interface
-- `REQ-020` to `REQ-029`: Non-functional requirements
-- `REQ-030+`: Reserved for future categories
+| Prefix | Category | Directory | Description |
+|--------|----------|-----------|-------------|
+| `SYSREQ-*` | System | `core/` | Core functionality, services, and business logic |
+| `UIREQ-*` | User Interface | `ui/` | Screens, views, and user interactions |
+| `NFREQ-*` | Non-Functional | `non-functional/` | Performance, logging, compatibility, testing |
+
+Each prefix uses its own independent counter starting at 001.
 
 ### File Naming
 
-Files are named `REQ-NNN-kebab-case-title.md`, matching the requirement ID and title.
+Files are named `{PREFIX}-NNN-kebab-case-title.md`, matching the requirement ID and title. For example:
+- `SYSREQ-001-flight-tracking.md`
+- `UIREQ-003-flight-detail-view.md`
+- `NFREQ-002-logging.md`
 
 ### Adding New Requirements
 
-1. Determine the appropriate category (core, ui, non-functional)
-2. Use the next available ID in that category
+1. Determine the appropriate category (system, UI, non-functional)
+2. Use the next available number for that prefix
 3. Create the file with YAML frontmatter and Markdown body
 4. Update this README's index table
 5. Ensure all scenarios are testable (Given/When/Then format)

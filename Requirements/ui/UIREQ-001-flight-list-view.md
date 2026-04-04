@@ -1,5 +1,5 @@
 ---
-id: REQ-010
+id: UIREQ-001
 title: Flight List View
 priority: high
 type: feature
@@ -43,7 +43,7 @@ scenarios:
     then: The navigation title shows "Flights (N)" where N is the count
 ---
 
-# REQ-010: Flight List View
+# UIREQ-001: Flight List View
 
 ## Description
 

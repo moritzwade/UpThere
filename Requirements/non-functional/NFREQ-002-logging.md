@@ -1,5 +1,5 @@
 ---
-id: REQ-021
+id: NFREQ-002
 title: Logging
 priority: medium
 type: non-functional
@@ -33,7 +33,7 @@ scenarios:
     then: No `print()` statements are found
 ---
 
-# REQ-021: Logging
+# NFREQ-002: Logging
 
 ## Description
 

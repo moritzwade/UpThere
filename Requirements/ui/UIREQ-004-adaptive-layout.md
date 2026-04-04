@@ -1,5 +1,5 @@
 ---
-id: REQ-013
+id: UIREQ-004
 title: Adaptive Layout
 priority: medium
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: Flight tracking is stopped (location + auto-refresh)
 ---
 
-# REQ-013: Adaptive Layout
+# UIREQ-004: Adaptive Layout
 
 ## Description
 

@@ -1,5 +1,5 @@
 ---
-id: REQ-023
+id: NFREQ-004
 title: Test Coverage
 priority: medium
 type: non-functional
@@ -28,7 +28,7 @@ scenarios:
     then: Tests are run on both iOS and macOS targets
 ---
 
-# REQ-023: Test Coverage
+# NFREQ-004: Test Coverage
 
 ## Description
 

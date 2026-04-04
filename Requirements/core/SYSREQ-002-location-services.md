@@ -1,5 +1,5 @@
 ---
-id: REQ-002
+id: SYSREQ-002
 title: Location Services
 priority: high
 type: feature
@@ -33,7 +33,7 @@ scenarios:
     then: Location updates are stopped to conserve battery
 ---
 
-# REQ-002: Location Services
+# SYSREQ-002: Location Services
 
 ## Description
 

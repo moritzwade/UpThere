@@ -1,5 +1,5 @@
 ---
-id: REQ-012
+id: UIREQ-003
 title: Flight Detail View
 priority: medium
 type: feature
@@ -28,7 +28,7 @@ scenarios:
     then: The header shows a large airplane icon rotated by the flight's heading
 ---
 
-# REQ-012: Flight Detail View
+# UIREQ-003: Flight Detail View
 
 ## Description
 

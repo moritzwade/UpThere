@@ -1,5 +1,5 @@
 ---
-id: REQ-005
+id: SYSREQ-005
 title: Manual Refresh
 priority: medium
 type: feature
@@ -28,7 +28,7 @@ scenarios:
     then: The second refresh is ignored until the first completes
 ---
 
-# REQ-005: Manual Refresh
+# SYSREQ-005: Manual Refresh
 
 ## Description
 
