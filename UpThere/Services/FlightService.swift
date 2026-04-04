@@ -11,6 +11,7 @@ actor FlightService {
     
     private let decoder = JSONDecoder()
     
+    /// Initializer for production use
     nonisolated init(config: OpenSkyConfig = .default) {
         self.config = config
         
@@ -18,6 +19,12 @@ actor FlightService {
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 60
         self.session = URLSession(configuration: configuration)
+    }
+    
+    /// Initializer with custom URLSession (for testing)
+    nonisolated init(config: OpenSkyConfig, session: URLSession) {
+        self.config = config
+        self.session = session
     }
     
     /// Fetch all flights within a bounding box

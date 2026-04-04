@@ -49,13 +49,57 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         COMBINE_HIDPI_IMAGES: YES
 
+  UpThereTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: UpThereTests
+    dependencies:
+      - target: UpThere
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moritzwade.upthere.tests
+
+  UpThereMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: UpThereTests
+    dependencies:
+      - target: UpThereMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moritzwade.upthere.mactests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/UpThere.app/Contents/MacOS/UpThere
+
 schemes:
   UpThere:
     build:
       targets:
         UpThere: all
         UpThereMac: all
+        UpThereTests: test
+        UpThereMacTests: test
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - UpThereTests
+    archive:
+      config: Release
+
+  UpThereMac:
+    build:
+      targets:
+        UpThereMac: all
+        UpThereMacTests: test
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - UpThereMacTests
     archive:
       config: Release
