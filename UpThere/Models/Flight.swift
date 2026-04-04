@@ -67,6 +67,16 @@ struct Flight: Identifiable, Hashable {
     var formattedCallsign: String {
         callsign.trimmingCharacters(in: .whitespaces).uppercased()
     }
+    
+    /// ICAO airline designator extracted from callsign (first 3 characters, e.g., "UAL" from "UAL1234")
+    var airlineDesignator: String? {
+        let trimmed = formattedCallsign
+        guard trimmed.count >= 3 else { return nil }
+        let designator = String(trimmed.prefix(3))
+        // Validate it looks like an ICAO code (letters only)
+        guard designator.range(of: "^[A-Z]{3}$", options: .regularExpression) != nil else { return nil }
+        return designator
+    }
 }
 
 /// Extension for creating Flight from OpenSky state array
