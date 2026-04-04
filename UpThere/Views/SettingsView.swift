@@ -109,6 +109,7 @@ struct SettingsView: View {
 
     // MARK: - OpenSky API Credentials
 
+    @ViewBuilder
     private var openSkyCredentialsSection: some View {
         Section("OpenSky API") {
             TextField("Client ID", text: $settings.customClientId)
