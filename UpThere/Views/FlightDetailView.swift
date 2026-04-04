@@ -118,6 +118,38 @@ struct FlightDetailView: View {
         }
     }
     
+    // MARK: - Airline Info Helpers
+    
+    /// Airline info from local database (always available if callsign matches)
+    private var localAirlineInfo: AirlineInfo? {
+        guard let designator = flight.airlineDesignator else { return nil }
+        return AirlineDatabase.lookup(icao: designator)
+    }
+    
+    /// Logo URL — prefer API data, fall back to local database
+    private var logoURL: URL? {
+        // First try from API route data
+        if let url = viewModel.selectedFlightRoute?.logoURL {
+            return url
+        }
+        // Fall back to local database
+        if let info = localAirlineInfo {
+            return URL(string: "https://images.kiwi.com/airlines/64/\(info.iata).png")
+        }
+        return nil
+    }
+    
+    /// Airline display name — prefer API data, fall back to local database
+    private var airlineDisplayName: String? {
+        if let name = viewModel.selectedFlightRoute?.formattedAirline {
+            return name
+        }
+        if let info = localAirlineInfo {
+            return "\(info.name) (\(info.icao))"
+        }
+        return nil
+    }
+    
     // MARK: - Header View
     
     private var headerView: some View {
@@ -125,9 +157,9 @@ struct FlightDetailView: View {
             Spacer()
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
-                    // Airline logo (if available)
-                    if let logoURL = viewModel.selectedFlightRoute?.logoURL {
-                        AsyncImage(url: logoURL) { phase in
+                    // Airline logo (from API or local database)
+                    if let url = logoURL {
+                        AsyncImage(url: url) { phase in
                             switch phase {
                             case .success(let image):
                                 image
@@ -218,11 +250,16 @@ struct FlightDetailView: View {
     
     @ViewBuilder
     private var routeSection: some View {
-        if let route = viewModel.selectedFlightRoute, route.hasRouteData {
+        let route = viewModel.selectedFlightRoute
+        let hasAirportData = route?.departureAirportIata != nil || route?.arrivalAirportIata != nil
+        let hasAirlineData = airlineDisplayName != nil
+        
+        if hasAirlineData || hasAirportData || viewModel.isLoadingRoute {
             Group {
                 Text("Route").font(.headline)
                 
-                if let airline = route.formattedAirline {
+                // Airline — from API or local database
+                if let airline = airlineDisplayName {
                     HStack {
                         Text("Airline:")
                         Spacer()
@@ -230,13 +267,14 @@ struct FlightDetailView: View {
                     }
                 }
                 
-                if let depAirport = route.departureAirportIata {
+                // Origin airport (from API)
+                if let depAirport = route?.departureAirportIata {
                     HStack {
                         Text("Origin:")
                         Spacer()
                         VStack(alignment: .trailing) {
                             Text(depAirport).fontWeight(.medium)
-                            if let name = route.departureAirportName {
+                            if let name = route?.departureAirportName {
                                 Text(name)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -245,13 +283,14 @@ struct FlightDetailView: View {
                     }
                 }
                 
-                if let arrAirport = route.arrivalAirportIata {
+                // Destination airport (from API)
+                if let arrAirport = route?.arrivalAirportIata {
                     HStack {
                         Text("Destination:")
                         Spacer()
                         VStack(alignment: .trailing) {
                             Text(arrAirport).fontWeight(.medium)
-                            if let name = route.arrivalAirportName {
+                            if let name = route?.arrivalAirportName {
                                 Text(name)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -260,33 +299,32 @@ struct FlightDetailView: View {
                     }
                 }
                 
-                if let estimatedArrival = route.estimatedArrival {
+                // Estimated/Scheduled arrival (from API)
+                if let estimatedArrival = route?.estimatedArrival {
                     HStack {
                         Text("Est. Arrival:")
                         Spacer()
                         Text(estimatedArrival, style: .time).fontWeight(.medium)
                     }
-                } else if let scheduledArrival = route.scheduledArrival {
+                } else if let scheduledArrival = route?.scheduledArrival {
                     HStack {
                         Text("Scheduled Arrival:")
                         Spacer()
                         Text(scheduledArrival, style: .time).fontWeight(.medium)
                     }
                 }
-            }
-            .padding(.horizontal)
-        } else if viewModel.isLoadingRoute {
-            Group {
-                Text("Route").font(.headline)
-                HStack {
-                    Spacer()
-                    ProgressView("Loading route info...")
-                    Spacer()
+                
+                // Loading indicator for route data
+                if viewModel.isLoadingRoute && route == nil {
+                    HStack {
+                        Spacer()
+                        ProgressView("Loading route info...")
+                        Spacer()
+                    }
                 }
             }
             .padding(.horizontal)
         }
-        // If no route data and not loading, we simply don't show the section
     }
     
     // MARK: - Trail Map View
