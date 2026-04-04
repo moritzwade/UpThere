@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Service for fetching flight data from OpenSky Network API
 actor FlightService {
@@ -30,6 +31,7 @@ actor FlightService {
     /// Fetch all flights within a bounding box
     func fetchFlights(in boundingBox: BoundingBox) async throws -> [Flight] {
         let url = try buildURL(for: boundingBox)
+        AppLogger.flightService.debug("Fetching flights: \(url.absoluteString, privacy: .public)")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         
@@ -43,15 +45,19 @@ actor FlightService {
             let (data, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
+                AppLogger.flightService.error("Invalid response type from OpenSky API")
                 throw OpenSkyError.invalidResponse
             }
             
             switch httpResponse.statusCode {
             case 200:
                 let openSkyResponse = try OpenSkyResponse.parse(from: data)
-                return openSkyResponse.toFlights()
+                let flights = openSkyResponse.toFlights()
+                AppLogger.flightService.info("Fetched \(flights.count, privacy: .public) flights")
+                return flights
             case 401:
                 // Token expired, refresh and retry
+                AppLogger.flightService.warning("Received 401, refreshing token and retrying")
                 accessToken = nil
                 tokenExpiresAt = nil
                 if config.isConfigured {
@@ -60,17 +66,21 @@ actor FlightService {
                 }
                 throw OpenSkyError.unauthorized
             case 429:
+                AppLogger.flightService.warning("Rate limited by OpenSky API (429)")
                 throw OpenSkyError.rateLimited
             default:
                 // Try to extract error message from response
                 if let errorText = String(data: data, encoding: .utf8), !errorText.isEmpty {
-                    print("OpenSky API error (\(httpResponse.statusCode)): \(errorText)")
+                    AppLogger.flightService.error("OpenSky API error (\(httpResponse.statusCode, privacy: .public)): \(errorText, privacy: .public)")
+                } else {
+                    AppLogger.flightService.error("OpenSky API error (\(httpResponse.statusCode, privacy: .public)): no response body")
                 }
                 throw OpenSkyError.invalidResponse
             }
         } catch let error as OpenSkyError {
             throw error
         } catch {
+            AppLogger.flightService.error("Network error fetching flights: \(error.localizedDescription, privacy: .public)")
             throw OpenSkyError.networkError(error)
         }
     }
@@ -85,18 +95,23 @@ actor FlightService {
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            AppLogger.flightService.error("Invalid response type from OpenSky API (retry)")
             throw OpenSkyError.invalidResponse
         }
         
         guard httpResponse.statusCode == 200 else {
             if let errorText = String(data: data, encoding: .utf8), !errorText.isEmpty {
-                print("OpenSky API error (\(httpResponse.statusCode)): \(errorText)")
+                AppLogger.flightService.error("OpenSky API error after token refresh (\(httpResponse.statusCode, privacy: .public)): \(errorText, privacy: .public)")
+            } else {
+                AppLogger.flightService.error("OpenSky API error after token refresh (\(httpResponse.statusCode, privacy: .public)): no response body")
             }
             throw OpenSkyError.invalidResponse
         }
         
         let openSkyResponse = try OpenSkyResponse.parse(from: data)
-        return openSkyResponse.toFlights()
+        let flights = openSkyResponse.toFlights()
+        AppLogger.flightService.info("Fetched \(flights.count, privacy: .public) flights (after token refresh)")
+        return flights
     }
     
     /// Get a valid access token, refreshing if needed
@@ -132,8 +147,11 @@ actor FlightService {
         
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
             if let errorText = String(data: data, encoding: .utf8) {
-                print("Auth error: \(errorText)")
+                AppLogger.flightService.error("Auth error (\(status, privacy: .public)): \(errorText, privacy: .public)")
+            } else {
+                AppLogger.flightService.error("Auth error (\(status, privacy: .public)): no response body")
             }
             throw OpenSkyError.unauthorized
         }
@@ -149,6 +167,8 @@ actor FlightService {
         // Set expiry (typically 30 minutes, with margin)
         let expiresIn = json["expires_in"] as? Int ?? 1800
         self.tokenExpiresAt = Date().addingTimeInterval(TimeInterval(expiresIn - 60))
+        
+        AppLogger.flightService.debug("OAuth token refreshed, expires in \(expiresIn - 60, privacy: .public)s")
         
         return accessToken
     }

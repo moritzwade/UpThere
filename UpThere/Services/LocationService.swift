@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import os
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -28,6 +29,7 @@ class LocationService: NSObject, ObservableObject {
     
     /// Request location permission
     func requestPermission() {
+        AppLogger.locationService.info("Requesting location permission")
         #if os(macOS)
         locationManager.requestAlwaysAuthorization()
         #else
@@ -44,14 +46,17 @@ class LocationService: NSObject, ObservableObject {
         #endif
         
         guard isAuthorized else {
+            AppLogger.locationService.warning("Location not authorized, requesting permission")
             requestPermission()
             return
         }
+        AppLogger.locationService.debug("Starting location updates")
         locationManager.startUpdatingLocation()
     }
     
     /// Stop updating location
     func stopUpdating() {
+        AppLogger.locationService.debug("Stopping location updates")
         locationManager.stopUpdatingLocation()
     }
     
@@ -65,9 +70,13 @@ extension LocationService: CLLocationManagerDelegate {
             self.currentLocation = locations.last
             self.locationError = nil
         }
+        if let location = locations.last {
+            AppLogger.locationService.debug("Location update: \(location.coordinate.latitude, privacy: .public), \(location.coordinate.longitude, privacy: .public)")
+        }
     }
     
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        AppLogger.locationService.error("Location update failed: \(error.localizedDescription, privacy: .public)")
         Task { @MainActor in
             self.locationError = error
         }
@@ -78,13 +87,19 @@ extension LocationService: CLLocationManagerDelegate {
             #if os(macOS)
             self.authorizationStatus = CLLocationManager.authorizationStatus()
             if self.authorizationStatus == .authorizedAlways {
+                AppLogger.locationService.info("Location authorization granted (always)")
                 self.startUpdating()
+            } else {
+                AppLogger.locationService.warning("Location authorization changed to: \(self.authorizationStatus.displayName, privacy: .public)")
             }
             #else
             self.authorizationStatus = manager.authorizationStatus
             if self.authorizationStatus == .authorizedWhenInUse ||
                self.authorizationStatus == .authorizedAlways {
+                AppLogger.locationService.info("Location authorization granted")
                 self.startUpdating()
+            } else {
+                AppLogger.locationService.warning("Location authorization changed to: \(self.authorizationStatus.displayName, privacy: .public)")
             }
             #endif
         }
